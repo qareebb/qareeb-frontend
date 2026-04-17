@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قريب - Qareeb</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1>🧰 قريب</h1>
+        <p>الحرفي الماهر قريب منك</p>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container">
+        <!-- Location Bar -->
+        <div class="location-bar">
+            <span>📍</span>
+            <span id="locationText">صفاقس، المدينة</span>
+        </div>
+
+        <!-- Screens -->
+        <div id="homeScreen" class="screen active">
+            <h2 class="section-title">اختار الخدمة اللي تحب</h2>
+            
+            <div class="services-grid">
+                <div class="service-card" data-service="1">
+                    <span class="service-icon">🚰</span>
+                    <span class="service-name">سباك</span>
+                </div>
+                <div class="service-card" data-service="2">
+                    <span class="service-icon">⚡</span>
+                    <span class="service-name">كهربائي</span>
+                </div>
+                <div class="service-card" data-service="3">
+                    <span class="service-icon">🧹</span>
+                    <span class="service-name">تنظيف</span>
+                </div>
+                <!-- الخدمات الجديدة -->
+    <div class="service-card" data-service="5">
+        <span class="service-icon">🎨</span>
+        <span class="service-name">دهان</span>
+    </div>
+    <div class="service-card" data-service="6">
+        <span class="service-icon">🪚</span>
+        <span class="service-name">نجارة</span>
+    </div>
+    <div class="service-card" data-service="7">
+        <span class="service-icon">🔧</span>
+        <span class="service-name">تركيب</span>
+    </div>
+    <div class="service-card" data-service="8">
+        <span class="service-icon">🛠️</span>
+        <span class="service-name">بريكولاج</span>
+    </div>
+</div>
+
+            <button id="searchBtn" class="btn btn-primary" disabled>
+                🔍 بحث على حرفي
+            </button>
+
+            <div class="auth-links">
+                <button id="showLoginBtn" class="btn-text">تسجيل الدخول</button>
+                <button id="showRegisterBtn" class="btn-text">حساب جديد</button>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="resultsScreen" class="screen">
+            <button id="backBtn" class="btn-back">← رجوع</button>
+            <h2 class="section-title" id="resultsTitle">حرفيين متوفرين</h2>
+            <div id="craftsmenList" class="craftsmen-list"></div>
+        </div>
+
+        <!-- Login Screen -->
+        <div id="loginScreen" class="screen">
+            <button class="btn-back" onclick="showScreen('home')">← رجوع</button>
+            <h2 class="section-title">تسجيل الدخول</h2>
+            
+            <form id="loginForm" class="auth-form">
+                <input type="tel" id="loginPhone" placeholder="رقم الهاتف" required>
+                <input type="password" id="loginPassword" placeholder="كلمة المرور" required>
+                <button type="submit" class="btn btn-primary">دخول</button>
+            </form>
+        </div>
+
+        <!-- Register Screen -->
+        <div id="registerScreen" class="screen">
+            <button class="btn-back" onclick="showScreen('home')">← رجوع</button>
+            <h2 class="section-title">حساب جديد</h2>
+            
+            <form id="registerForm" class="auth-form">
+                <input type="text" id="regName" placeholder="الاسم الكامل" required>
+                <input type="tel" id="regPhone" placeholder="رقم الهاتف" required>
+                <input type="password" id="regPassword" placeholder="كلمة المرور" required>
+                
+                <div class="role-selector">
+                    <label>
+                        <input type="radio" name="role" value="user" checked> مستخدم
+                    </label>
+                    <label>
+                        <input type="radio" name="role" value="craftsman"> حرفي
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">تسجيل</button>
+            </form>
+        </div>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
