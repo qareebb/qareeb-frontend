@@ -7,12 +7,16 @@ let currentUser = null;
 let currentCraftsmen = []; 
 let userLocation = { lat: 34.7400, lng: 10.7600 }; // Default: Sfax
 let selectedRating = 0;
-
+let currentResetPhone = '';
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     checkUserLocation();
     setupEventListeners();
     checkAuthState();
+        // Forgot Password Forms
+    document.getElementById('forgotPasswordForm')?.addEventListener('submit', handleForgotPassword);
+    document.getElementById('verifyCodeForm')?.addEventListener('submit', handleVerifyCode);
+    document.getElementById('changePasswordForm')?.addEventListener('submit', handleChangePassword);
 });
 
 // Setup Event Listeners

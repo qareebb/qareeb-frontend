@@ -67,15 +67,18 @@
                 <button id="showRegisterBtn" class="btn-text">حساب جديد</button>
                 <button id="logoutBtn" class="btn-text" style="display: none;" onclick="logout()">🚪 خروج</button>
             </div>
-             <!-- أزرار إضافية -->
-<div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center;">
-    <button onclick="showTopCraftsmen()" class="btn-text" style="background: #fbbf24; color: #000; padding: 8px 16px; border-radius: 20px; text-decoration: none;">
-        🏆 أفضل الحرفيين
-    </button>
-    <button id="myOrdersBtn" class="btn-text" onclick="showMyOrders()" style="display: none; background: #667eea; color: white; padding: 8px 16px; border-radius: 20px;">
-        📋 طلباتي
-    </button>
-</div>
+
+            <!-- أزرار إضافية -->
+            <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <button onclick="showTopCraftsmen()" class="btn-top">🏆 أفضل الحرفيين</button>
+                <button id="myOrdersBtn" class="btn-my-orders" onclick="showMyOrders()" style="display: none;">📋 طلباتي</button>
+            </div>
+
+            <!-- روابط الملف الشخصي -->
+            <div id="profileLinks" style="display: none; margin-top: 15px; text-align: center;">
+                <button onclick="showChangePasswordScreen()" class="btn-text">🔐 تغيير كلمة المرور</button>
+            </div>
+
             <!-- زر لوحة التحكم - يظهر فقط للحرفي -->
             <div id="dashboardLink" style="display: none; margin-top: 15px;">
                 <button onclick="showDashboard()" class="btn btn-success" style="background: #10b981; width: 100%;">
@@ -90,6 +93,32 @@
             <h2 class="section-title" id="resultsTitle">حرفيين متوفرين</h2>
             <div id="craftsmenList" class="craftsmen-list"></div>
         </div>
+        <!-- Forgot Password Screen -->
+<div id="forgotPasswordScreen" class="screen">
+    <button class="btn-back" onclick="showScreen('login')">← رجوع</button>
+    <h2 class="section-title">🔐 نسيت كلمة المرور</h2>
+    
+    <form id="forgotPasswordForm" class="auth-form">
+        <p style="text-align: center; margin-bottom: 15px;">أدخل رقم هاتفك وسنرسل لك رمز التحقق</p>
+        <input type="tel" id="forgotPhone" placeholder="رقم الهاتف" required>
+        <button type="submit" class="btn btn-primary">📤 إرسال رمز التحقق</button>
+    </form>
+</div>
+
+<!-- Verify Code Screen -->
+<div id="verifyCodeScreen" class="screen">
+    <button class="btn-back" onclick="showScreen('login')">← رجوع</button>
+    <h2 class="section-title">📱 أدخل رمز التحقق</h2>
+    
+    <form id="verifyCodeForm" class="auth-form">
+        <p style="text-align: center; margin-bottom: 15px;">تم إرسال رمز التحقق إلى هاتفك</p>
+        <input type="text" id="verificationCode" placeholder="رمز التحقق (6 أرقام)" maxlength="6" required>
+        <input type="password" id="newPassword" placeholder="كلمة المرور الجديدة" required>
+        <input type="password" id="confirmNewPassword" placeholder="تأكيد كلمة المرور" required>
+        <button type="submit" class="btn btn-primary">✅ تأكيد وتغيير كلمة المرور</button>
+    </form>
+</div>
+
 
         <!-- Login Screen -->
         <div id="loginScreen" class="screen">
@@ -101,6 +130,9 @@
                 <input type="password" id="loginPassword" placeholder="كلمة المرور" required>
                 <button type="submit" class="btn btn-primary">دخول</button>
             </form>
+            <div style="text-align: center; margin-top: 15px;">
+    <button onclick="showScreen('forgotPassword')" class="btn-text">نسيت كلمة المرور؟</button>
+</div>
         </div>
 
         <!-- Register Screen -->
@@ -126,9 +158,22 @@
             </form>
         </div>
 
+        <!-- Change Password Screen -->
+        <div id="changePasswordScreen" class="screen">
+            <button class="btn-back" onclick="showScreen('home')">← رجوع</button>
+            <h2 class="section-title">🔐 تغيير كلمة المرور</h2>
+            
+            <form id="changePasswordForm" class="auth-form">
+                <input type="password" id="currentPassword" placeholder="كلمة المرور الحالية" required>
+                <input type="password" id="newPassword" placeholder="كلمة المرور الجديدة" required>
+                <input type="password" id="confirmPassword" placeholder="تأكيد كلمة المرور الجديدة" required>
+                <button type="submit" class="btn btn-primary">تحديث كلمة المرور</button>
+            </form>
+        </div>
+
         <!-- Rating Screen -->
         <div id="ratingScreen" class="screen">
-            <button class="btn-back" onclick="showScreen('home')">← رجوع</button>
+            <button class="btn-back" onclick="showScreen('myOrders')">← رجوع</button>
             <h2>⭐ تقييم الخدمة</h2>
             <div id="ratingContent"></div>
         </div>
