@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>قريب - Qareeb</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
 </head>
 <body>
     <!-- Header -->
@@ -21,7 +23,7 @@
             <span id="locationText">صفاقس، المدينة</span>
         </div>
 
-        <!-- Screens -->
+        <!-- Home Screen -->
         <div id="homeScreen" class="screen active">
             <h2 class="section-title">اختار الخدمة اللي تحب</h2>
             
@@ -38,24 +40,23 @@
                     <span class="service-icon">🧹</span>
                     <span class="service-name">تنظيف</span>
                 </div>
-                <!-- الخدمات الجديدة -->
-    <div class="service-card" data-service="5">
-        <span class="service-icon">🎨</span>
-        <span class="service-name">دهان</span>
-    </div>
-    <div class="service-card" data-service="6">
-        <span class="service-icon">🪚</span>
-        <span class="service-name">نجارة</span>
-    </div>
-    <div class="service-card" data-service="7">
-        <span class="service-icon">🔧</span>
-        <span class="service-name">تركيب</span>
-    </div>
-    <div class="service-card" data-service="8">
-        <span class="service-icon">🛠️</span>
-        <span class="service-name">بريكولاج</span>
-    </div>
-</div>
+                <div class="service-card" data-service="5">
+                    <span class="service-icon">🎨</span>
+                    <span class="service-name">دهان</span>
+                </div>
+                <div class="service-card" data-service="6">
+                    <span class="service-icon">🪚</span>
+                    <span class="service-name">نجارة</span>
+                </div>
+                <div class="service-card" data-service="7">
+                    <span class="service-icon">🔧</span>
+                    <span class="service-name">تركيب</span>
+                </div>
+                <div class="service-card" data-service="8">
+                    <span class="service-icon">🛠️</span>
+                    <span class="service-name">بريكولاج</span>
+                </div>
+            </div>
 
             <button id="searchBtn" class="btn btn-primary" disabled>
                 🔍 بحث على حرفي
@@ -64,6 +65,14 @@
             <div class="auth-links">
                 <button id="showLoginBtn" class="btn-text">تسجيل الدخول</button>
                 <button id="showRegisterBtn" class="btn-text">حساب جديد</button>
+                <button id="logoutBtn" class="btn-text" style="display: none;" onclick="logout()">🚪 خروج</button>
+            </div>
+
+            <!-- زر لوحة التحكم - يظهر فقط للحرفي -->
+            <div id="dashboardLink" style="display: none; margin-top: 15px;">
+                <button onclick="showDashboard()" class="btn btn-success" style="background: #10b981; width: 100%;">
+                    📋 لوحة تحكم الحرفي
+                </button>
             </div>
         </div>
 
@@ -107,6 +116,25 @@
                 
                 <button type="submit" class="btn btn-primary">تسجيل</button>
             </form>
+        </div>
+
+        <!-- Rating Screen -->
+        <div id="ratingScreen" class="screen">
+            <button class="btn-back" onclick="showScreen('home')">← رجوع</button>
+            <h2>⭐ تقييم الخدمة</h2>
+            <div id="ratingContent"></div>
+        </div>
+
+        <!-- Craftsman Dashboard -->
+        <div id="dashboardScreen" class="screen">
+            <button class="btn-back" onclick="showScreen('home')">← رجوع</button>
+            <h2>📋 لوحة تحكم الحرفي</h2>
+            <div id="dashboardTabs">
+                <button onclick="loadOrders('pending')">⏳ طلبات جديدة</button>
+                <button onclick="loadOrders('accepted')">✅ طلبات مقبولة</button>
+                <button onclick="loadOrders('done')">✔️ طلبات منتهية</button>
+            </div>
+            <div id="dashboardOrders"></div>
         </div>
     </main>
 

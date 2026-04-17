@@ -6,6 +6,7 @@ let selectedService = null;
 let currentUser = null;
 let currentCraftsmen = []; 
 let userLocation = { lat: 34.7400, lng: 10.7600 }; // Default: Sfax
+let selectedRating = 0;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -101,14 +102,9 @@ async function searchCraftsmen() {
 // Display Craftsmen
 function displayCraftsmen(craftsmen, serviceId) {
     const serviceNames = { 
-    '1': 'سباك',
-    '2': 'كهربائي', 
-    '3': 'تنظيف',
-    '5': 'دهان',
-    '6': 'نجارة',
-    '7': 'تركيب',
-    '8': 'بريكولاج'
-};
+        '1': 'سباك', '2': 'كهربائي', '3': 'تنظيف',
+        '5': 'دهان', '6': 'نجارة', '7': 'تركيب', '8': 'بريكولاج'
+    };
     document.getElementById('resultsTitle').textContent = `🔧 ${serviceNames[serviceId]} - الأقرب ليك`;
     
     const container = document.getElementById('craftsmenList');
@@ -119,20 +115,20 @@ function displayCraftsmen(craftsmen, serviceId) {
     }
     
     container.innerHTML = craftsmen.map(c => `
-    <div class="craftsman-card" onclick="showCraftsmanDetails(${c.id})" style="cursor: pointer;">
-        <div class="craftsman-info">
-            <h3>${c.name || 'اسم غير معروف'} ${c.is_verified ? '✅' : ''}</h3>
-            <p>
-                <span class="rating">⭐ ${c.rating || '0.0'}</span> · 
-                <span class="distance">📏 ${c.distance ? c.distance.toFixed(1) : '?'} كم</span>
-            </p>
+        <div class="craftsman-card" onclick="showCraftsmanDetails(${c.id})" style="cursor: pointer;">
+            <div class="craftsman-info">
+                <h3>${c.name || 'اسم غير معروف'} ${c.is_verified ? '✅' : ''}</h3>
+                <p>
+                    <span class="rating">⭐ ${c.rating || '0.0'}</span> · 
+                    <span class="distance">📏 ${c.distance ? c.distance.toFixed(1) : '?'} كم</span>
+                </p>
+            </div>
+            <div class="contact-buttons" onclick="event.stopPropagation()">
+                <a href="https://wa.me/216${c.phone}" target="_blank" class="btn-whatsapp">💬 واتساب</a>
+                <a href="tel:+216${c.phone}" class="btn-call">📞 اتصال</a>
+            </div>
         </div>
-        <div class="contact-buttons" onclick="event.stopPropagation()">
-            <a href="https://wa.me/216${c.phone}" target="_blank" class="btn-whatsapp">💬 واتساب</a>
-            <a href="tel:+216${c.phone}" class="btn-call">📞 اتصال</a>
-        </div>
-    </div>
-`).join('');
+    `).join('');
 }
 
 // Handle Login
@@ -157,6 +153,8 @@ async function handleLogin(e) {
             currentUser = data.user;
             localStorage.setItem('qareeb_token', data.token);
             localStorage.setItem('qareeb_user', JSON.stringify(data.user));
+            
+            updateUIAfterAuth();
             
             alert(`مرحباً ${data.user.name}!`);
             showScreen('home');
@@ -199,6 +197,8 @@ async function handleRegister(e) {
             localStorage.setItem('qareeb_token', data.token);
             localStorage.setItem('qareeb_user', JSON.stringify(data.user));
             
+            updateUIAfterAuth();
+            
             alert(`تم إنشاء الحساب بنجاح! مرحباً ${data.user.name}`);
             showScreen('home');
             document.getElementById('registerForm').reset();
@@ -213,6 +213,33 @@ async function handleRegister(e) {
     }
 }
 
+// Update UI after login/register
+function updateUIAfterAuth() {
+    if (currentUser) {
+        document.getElementById('showLoginBtn').style.display = 'none';
+        document.getElementById('showRegisterBtn').style.display = 'none';
+        document.getElementById('logoutBtn').style.display = 'inline-block';
+        
+        if (currentUser.role === 'craftsman') {
+            document.getElementById('dashboardLink').style.display = 'block';
+        }
+    }
+}
+
+// Logout
+function logout() {
+    localStorage.removeItem('qareeb_token');
+    localStorage.removeItem('qareeb_user');
+    currentUser = null;
+    
+    document.getElementById('showLoginBtn').style.display = 'inline-block';
+    document.getElementById('showRegisterBtn').style.display = 'inline-block';
+    document.getElementById('logoutBtn').style.display = 'none';
+    document.getElementById('dashboardLink').style.display = 'none';
+    
+    showScreen('home');
+}
+
 // Check Auth State
 function checkAuthState() {
     const token = localStorage.getItem('qareeb_token');
@@ -220,6 +247,7 @@ function checkAuthState() {
     
     if (token && user) {
         currentUser = JSON.parse(user);
+        updateUIAfterAuth();
     }
 }
 
@@ -229,7 +257,7 @@ function showLoading(show) {
 }
 
 // Show craftsman details
-function showCraftsmanDetails(craftsmanId) {
+async function showCraftsmanDetails(craftsmanId) {
     const craftsman = currentCraftsmen.find(c => c.id === craftsmanId);
     if (!craftsman) {
         alert('الحرفي غير موجود');
@@ -241,6 +269,24 @@ function showCraftsmanDetails(craftsmanId) {
         '5': 'دهان', '6': 'نجارة', '7': 'تركيب', '8': 'بريكولاج'
     };
     
+    // جلب التقييمات
+    let reviewsHtml = '<p>⭐ لا توجد تقييمات بعد</p>';
+    try {
+        const reviewsResponse = await fetch(`${API_URL}/orders/reviews/craftsman/${craftsmanId}`);
+        const reviews = await reviewsResponse.json();
+        if (reviews.length > 0) {
+            reviewsHtml = reviews.slice(0, 3).map(r => `
+                <div class="review-item">
+                    <p><strong>${r.user_name || 'مستخدم'}</strong> - ${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</p>
+                    <p>${r.comment || 'بدون تعليق'}</p>
+                    <small>${new Date(r.created_at).toLocaleDateString('ar-TN')}</small>
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('Error loading reviews:', error);
+    }
+    
     const html = `
         <div class="craftsman-profile">
             <h2>${craftsman.name} ${craftsman.is_verified ? '✅' : ''}</h2>
@@ -248,16 +294,22 @@ function showCraftsmanDetails(craftsmanId) {
             <p>⭐ ${craftsman.rating || '0.0'} (${craftsman.total_ratings || 0} تقييم)</p>
             <p>📏 ${craftsman.distance?.toFixed(1) || '?'} كم عنك</p>
             <p>🔧 الخدمة: ${serviceNames[selectedService] || 'غير محدد'}</p>
+            
             <button class="btn btn-primary" onclick="requestService(${craftsman.id})">
                 🛠️ طلب الخدمة
             </button>
+            
+            <div class="reviews-section">
+                <h3>⭐ التقييمات</h3>
+                ${reviewsHtml}
+            </div>
+            
             <button class="btn btn-secondary" onclick="showScreen('results')">
                 ← رجوع للقائمة
             </button>
         </div>
     `;
     
-    // إنشاء شاشة التفاصيل إذا لم تكن موجودة
     let detailsScreen = document.getElementById('detailsScreen');
     if (!detailsScreen) {
         detailsScreen = document.createElement('div');
@@ -266,7 +318,6 @@ function showCraftsmanDetails(craftsmanId) {
         document.querySelector('.container').appendChild(detailsScreen);
     }
     
-    // إنشاء محتوى التفاصيل
     let detailsContent = document.getElementById('detailsContent');
     if (!detailsContent) {
         detailsContent = document.createElement('div');
@@ -280,7 +331,6 @@ function showCraftsmanDetails(craftsmanId) {
 
 // Request service from craftsman
 async function requestService(craftsmanId) {
-    // التحقق من تسجيل الدخول
     if (!currentUser) {
         alert('يجب تسجيل الدخول أولاً لطلب الخدمة');
         showScreen('login');
@@ -298,7 +348,6 @@ async function requestService(craftsmanId) {
         return;
     }
     
-    // طلب وصف المشكلة
     const description = prompt('📝 اكتب وصف المشكلة:\n(مثلاً: حنفية المطبخ تسرب ماء)');
     if (!description || description.trim() === '') {
         alert('يجب كتابة وصف للمشكلة');
@@ -308,7 +357,6 @@ async function requestService(craftsmanId) {
     showLoading(true);
     
     try {
-        // 1. إنشاء الطلب في قاعدة البيانات
         const orderResponse = await fetch(`${API_URL}/orders`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -328,7 +376,6 @@ async function requestService(craftsmanId) {
             throw new Error(orderData.error || 'فشل إنشاء الطلب');
         }
         
-        // 2. فتح واتساب مع الحرفي
         const serviceNames = { 
             '1': 'سباك', '2': 'كهربائي', '3': 'تنظيف',
             '5': 'دهان', '6': 'نجارة', '7': 'تركيب', '8': 'بريكولاج'
@@ -338,14 +385,18 @@ async function requestService(craftsmanId) {
         
         const whatsappUrl = `https://wa.me/216${craftsman.phone}?text=${encodeURIComponent(message)}`;
         
-        // 3. تأكيد للمستخدم
         alert(`✅ تم إرسال طلبك إلى ${craftsman.name}!\nسيتم تحويلك إلى واتساب للتواصل المباشر.`);
         
-        // 4. فتح واتساب
         window.open(whatsappUrl, '_blank');
         
-        // 5. الرجوع للصفحة الرئيسية
-        showScreen('home');
+        // عرض شاشة التقييم بعد الطلب
+        setTimeout(() => {
+            if (confirm('هل تريد تقييم الخدمة الآن؟')) {
+                showRatingScreen(orderData.order.id, craftsman.name);
+            } else {
+                showScreen('home');
+            }
+        }, 1000);
         
     } catch (error) {
         console.error('Order error:', error);
@@ -355,4 +406,202 @@ async function requestService(craftsmanId) {
     }
 }
 
+// ==========================================
+// Rating Functions
+// ==========================================
 
+function showRatingScreen(orderId, craftsmanName) {
+    const html = `
+        <div class="rating-container">
+            <h3>${craftsmanName}</h3>
+            <p>كيف كانت تجربتك؟</p>
+            <div class="stars-container">
+                ${[1,2,3,4,5].map(i => `
+                    <span class="star" onclick="setRating(${i})" id="star${i}">☆</span>
+                `).join('')}
+            </div>
+            <textarea id="reviewComment" placeholder="تعليقك (اختياري)" rows="3"></textarea>
+            <button class="btn btn-primary" onclick="submitReview(${orderId})">📤 إرسال التقييم</button>
+        </div>
+    `;
+    
+    document.getElementById('ratingContent').innerHTML = html;
+    showScreen('rating');
+}
+
+function setRating(rating) {
+    selectedRating = rating;
+    document.querySelectorAll('.star').forEach((star, index) => {
+        star.textContent = index < rating ? '★' : '☆';
+    });
+}
+
+async function submitReview(orderId) {
+    if (selectedRating === 0) {
+        alert('الرجاء اختيار تقييم');
+        return;
+    }
+    
+    const comment = document.getElementById('reviewComment')?.value || '';
+    const token = localStorage.getItem('qareeb_token');
+    
+    showLoading(true);
+    
+    try {
+        const response = await fetch(`${API_URL}/orders/review`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                order_id: orderId,
+                rating: selectedRating,
+                comment: comment
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('✅ شكراً لتقييمك!');
+            showScreen('home');
+        } else {
+            alert(data.error || 'خطأ في إرسال التقييم');
+        }
+    } catch (error) {
+        console.error('Review error:', error);
+        alert('خطأ في الاتصال بالسيرفر');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// ==========================================
+// Craftsman Dashboard Functions
+// ==========================================
+
+function showDashboard() {
+    if (!currentUser || currentUser.role !== 'craftsman') {
+        alert('هذه الصفحة للحرفيين فقط');
+        return;
+    }
+    showScreen('dashboard');
+    loadOrders('pending');
+}
+
+async function loadOrders(status) {
+    const token = localStorage.getItem('qareeb_token');
+    
+    if (!token) {
+        alert('يجب تسجيل الدخول أولاً');
+        showScreen('login');
+        return;
+    }
+    
+    showLoading(true);
+    
+    try {
+        const response = await fetch(`${API_URL}/orders/craftsman`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+            throw new Error('فشل تحميل الطلبات');
+        }
+        
+        const orders = await response.json();
+        const filtered = orders.filter(o => o.status === status);
+        
+        const serviceNames = { 
+            '1': 'سباك', '2': 'كهربائي', '3': 'تنظيف',
+            '5': 'دهان', '6': 'نجارة', '7': 'تركيب', '8': 'بريكولاج'
+        };
+        
+        const statusNames = {
+            'pending': '⏳ قيد الانتظار',
+            'accepted': '✅ مقبول',
+            'done': '✔️ منتهي',
+            'cancelled': '❌ ملغي'
+        };
+        
+        const html = filtered.length === 0 ? 
+            '<p class="empty-state">😕 لا توجد طلبات حالياً</p>' :
+            filtered.map(order => `
+                <div class="order-card">
+                    <div class="order-header">
+                        <span class="order-status">${statusNames[order.status] || order.status}</span>
+                        <span class="order-date">${new Date(order.created_at).toLocaleDateString('ar-TN')}</span>
+                    </div>
+                    <p><strong>👤 العميل:</strong> ${order.user_name || 'غير معروف'}</p>
+                    <p><strong>📞 الهاتف:</strong> <a href="tel:+216${order.user_phone}">${order.user_phone}</a></p>
+                    <p><strong>🔧 الخدمة:</strong> ${serviceNames[order.service_id] || 'غير محدد'}</p>
+                    <p><strong>📝 المشكلة:</strong> ${order.address_text}</p>
+                    
+                    ${status === 'pending' ? `
+                        <div class="order-actions">
+                            <button class="btn-success" onclick="updateOrderStatus(${order.id}, 'accepted')">✅ قبول الطلب</button>
+                            <button class="btn-danger" onclick="updateOrderStatus(${order.id}, 'cancelled')">❌ رفض الطلب</button>
+                        </div>
+                    ` : ''}
+                    
+                    ${status === 'accepted' ? `
+                        <div class="order-actions">
+                            <button class="btn-success" onclick="updateOrderStatus(${order.id}, 'done')">✔️ تم الإنهاء</button>
+                            <a href="https://wa.me/216${order.user_phone}" target="_blank" class="btn-whatsapp">💬 واتساب</a>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        
+        document.getElementById('dashboardOrders').innerHTML = html;
+        
+    } catch (error) {
+        console.error('Dashboard error:', error);
+        alert('خطأ في تحميل الطلبات');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function updateOrderStatus(orderId, status) {
+    const token = localStorage.getItem('qareeb_token');
+    
+    showLoading(true);
+    
+    try {
+        const response = await fetch(`${API_URL}/orders/${orderId}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ status })
+        });
+        
+        if (response.ok) {
+            // تحديد التبويب النشط
+            const activeTab = document.querySelector('#dashboardTabs button:focus') || 
+                             document.querySelector('#dashboardTabs button');
+            let currentStatus = 'pending';
+            if (activeTab) {
+                if (activeTab.textContent.includes('مقبولة')) currentStatus = 'accepted';
+                else if (activeTab.textContent.includes('منتهية')) currentStatus = 'done';
+            }
+            
+            // إذا قبل الطلب، نعرض تبويب المقبولة
+            if (status === 'accepted') {
+                loadOrders('accepted');
+            } else {
+                loadOrders(currentStatus);
+            }
+        } else {
+            alert('خطأ في تحديث حالة الطلب');
+        }
+    } catch (error) {
+        console.error('Update error:', error);
+        alert('خطأ في الاتصال بالسيرفر');
+    } finally {
+        showLoading(false);
+    }
+}
