@@ -1,5 +1,5 @@
 // API Configuration
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://qareeb-backend-ehvw.onrender.com/api';
 
 // Global State
 let selectedService = null;
