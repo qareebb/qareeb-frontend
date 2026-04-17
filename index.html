@@ -182,7 +182,14 @@
         <div id="dashboardScreen" class="screen">
             <button class="btn-back" onclick="showScreen('home')">← رجوع</button>
             <h2>📋 لوحة تحكم الحرفي</h2>
-            <div id="dashboardTabs">
+            <div style="margin-bottom: 20px; text-align: center;">
+        <button onclick="showChangePasswordFromDashboard()" class="btn-text" style="background: #667eea; color: white; padding: 10px 20px; border-radius: 25px;">
+            🔐 تغيير كلمة المرور
+        </button>
+    </div>
+    
+    <div id="dashboardTabs">
+            
                 <button onclick="loadOrders('pending')">⏳ طلبات جديدة</button>
                 <button onclick="loadOrders('accepted')">✅ طلبات مقبولة</button>
                 <button onclick="loadOrders('done')">✔️ طلبات منتهية</button>

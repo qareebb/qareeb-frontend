@@ -8,12 +8,14 @@ let currentCraftsmen = [];
 let userLocation = { lat: 34.7400, lng: 10.7600 }; // Default: Sfax
 let selectedRating = 0;
 let currentResetPhone = '';
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     checkUserLocation();
     setupEventListeners();
     checkAuthState();
-        // Forgot Password Forms
+    
+    // Forgot Password Forms
     document.getElementById('forgotPasswordForm')?.addEventListener('submit', handleForgotPassword);
     document.getElementById('verifyCodeForm')?.addEventListener('submit', handleVerifyCode);
     document.getElementById('changePasswordForm')?.addEventListener('submit', handleChangePassword);
@@ -43,6 +45,16 @@ function setupEventListeners() {
 
 // Screen Navigation
 function showScreen(screenId) {
+    // إذا رجع للصفحة الرئيسية وكان عنده returnTo للوحة التحكم
+    if (screenId === 'home') {
+        const returnTo = localStorage.getItem('returnTo');
+        if (returnTo === 'dashboard' && currentUser && currentUser.role === 'craftsman') {
+            localStorage.removeItem('returnTo');
+            showDashboard();
+            return;
+        }
+    }
+    
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const targetScreen = document.getElementById(screenId + 'Screen');
     if (targetScreen) {
@@ -250,6 +262,7 @@ function updateUIAfterAuth() {
         document.getElementById('showLoginBtn').style.display = 'none';
         document.getElementById('showRegisterBtn').style.display = 'none';
         document.getElementById('logoutBtn').style.display = 'inline-block';
+        document.getElementById('profileLinks').style.display = 'block';
         
         const myOrdersBtn = document.getElementById('myOrdersBtn');
         if (myOrdersBtn) {
@@ -274,6 +287,7 @@ function logout() {
     document.getElementById('showLoginBtn').style.display = 'inline-block';
     document.getElementById('showRegisterBtn').style.display = 'inline-block';
     document.getElementById('logoutBtn').style.display = 'none';
+    document.getElementById('profileLinks').style.display = 'none';
     
     const myOrdersBtn = document.getElementById('myOrdersBtn');
     if (myOrdersBtn) {
@@ -326,7 +340,6 @@ async function showCraftsmanDetails(craftsmanId) {
         '5': 'دهان', '6': 'نجارة', '7': 'تركيب', '8': 'بريكولاج'
     };
     
-    // جلب التقييمات
     let reviewsHtml = '<p>⭐ لا توجد تقييمات بعد</p>';
     try {
         const reviewsResponse = await fetch(`${API_URL}/orders/reviews/craftsman/${craftsmanId}`);
@@ -449,10 +462,7 @@ async function requestService(craftsmanId) {
         
         alert(`✅ تم إرسال طلبك إلى ${craftsman.name}!\n\nرقم الطلب: ${orderData.order.id}\nيمكنك متابعة حالة طلبك من صفحة "طلباتي".\nبعد إتمام الخدمة، ستتمكن من تقييم الحرفي.`);
         
-        // فتح واتساب للتواصل المباشر
         window.open(whatsappUrl, '_blank');
-        
-        // الرجوع للصفحة الرئيسية (بدون طلب تقييم)
         showScreen('home');
         
     } catch (error) {
@@ -540,7 +550,6 @@ async function showTopCraftsmen() {
 }
 
 async function showTopCraftsmanDetails(craftsmanId) {
-    // استخدام نفس دالة showCraftsmanDetails مع تعديل بسيط
     const craftsman = currentCraftsmen.find(c => c.id === craftsmanId);
     if (craftsman) {
         selectedService = craftsman.service_id || 1;
@@ -868,6 +877,7 @@ async function updateOrderStatus(orderId, status) {
         showLoading(false);
     }
 }
+
 // ==========================================
 // Customer Rating Functions (Craftsman reviews Customer)
 // ==========================================
@@ -963,4 +973,163 @@ async function submitCustomerReview(orderId) {
     } finally {
         showLoading(false);
     }
+}
+
+// ==========================================
+// Forgot Password Functions
+// ==========================================
+
+async function handleForgotPassword(e) {
+    e.preventDefault();
+    
+    const phone = document.getElementById('forgotPhone').value;
+    currentResetPhone = phone;
+    
+    showLoading(true);
+    
+    try {
+        const response = await fetch(`${API_URL}/auth/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('📱 تم إرسال رمز التحقق: ' + (data.debug_code || 'تحقق من هاتفك'));
+            document.getElementById('forgotPasswordForm').reset();
+            showScreen('verifyCode');
+        } else {
+            alert(data.error || 'رقم الهاتف غير موجود');
+        }
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        alert('خطأ في الاتصال بالسيرفر');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function handleVerifyCode(e) {
+    e.preventDefault();
+    
+    const code = document.getElementById('verificationCode').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmNewPassword').value;
+    
+    if (newPassword !== confirmPassword) {
+        alert('كلمة المرور غير متطابقة');
+        return;
+    }
+    
+    if (newPassword.length < 6) {
+        alert('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+        return;
+    }
+    
+    showLoading(true);
+    
+    try {
+        const response = await fetch(`${API_URL}/auth/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                phone: currentResetPhone,
+                code: code,
+                newPassword: newPassword
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('✅ تم تغيير كلمة المرور بنجاح! يمكنك الآن تسجيل الدخول.');
+            document.getElementById('verifyCodeForm').reset();
+            showScreen('login');
+        } else {
+            alert(data.error || 'رمز التحقق غير صحيح أو منتهي الصلاحية');
+        }
+    } catch (error) {
+        console.error('Reset password error:', error);
+        alert('خطأ في الاتصال بالسيرفر');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// ==========================================
+// Change Password Functions
+// ==========================================
+
+function showChangePasswordScreen() {
+    if (!currentUser) {
+        alert('يجب تسجيل الدخول أولاً');
+        showScreen('login');
+        return;
+    }
+    showScreen('changePassword');
+}
+
+async function handleChangePassword(e) {
+    e.preventDefault();
+    
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (newPassword !== confirmPassword) {
+        alert('كلمة المرور الجديدة غير متطابقة');
+        return;
+    }
+    
+    if (newPassword.length < 6) {
+        alert('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+        return;
+    }
+    
+    const token = localStorage.getItem('qareeb_token');
+    
+    showLoading(true);
+    
+    try {
+        const response = await fetch(`${API_URL}/auth/change-password`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                currentPassword,
+                newPassword
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('✅ تم تغيير كلمة المرور بنجاح!');
+            document.getElementById('changePasswordForm').reset();
+            
+            const returnTo = localStorage.getItem('returnTo');
+            if (returnTo === 'dashboard') {
+                localStorage.removeItem('returnTo');
+                showDashboard();
+            } else {
+                showScreen('home');
+            }
+        } else {
+            alert(data.error || 'خطأ في تغيير كلمة المرور. تأكد من كلمة المرور الحالية.');
+        }
+    } catch (error) {
+        console.error('Change password error:', error);
+        alert('خطأ في الاتصال بالسيرفر');
+    } finally {
+        showLoading(false);
+    }
+}
+
+function showChangePasswordFromDashboard() {
+    localStorage.setItem('returnTo', 'dashboard');
+    showScreen('changePassword');
 }
