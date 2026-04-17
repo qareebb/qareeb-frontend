@@ -4,6 +4,7 @@ const API_URL = 'https://qareeb-backend-ehvw.onrender.com/api';
 // Global State
 let selectedService = null;
 let currentUser = null;
+let currentCraftsmen = []; 
 let userLocation = { lat: 34.7400, lng: 10.7600 }; // Default: Sfax
 
 // Initialize
@@ -81,6 +82,8 @@ async function searchCraftsmen() {
         
         const response = await fetch(url);
         const craftsmen = await response.json();
+
+        currentCraftsmen = craftsmen;
         
         console.log('Found craftsmen:', craftsmen);
         
@@ -116,20 +119,20 @@ function displayCraftsmen(craftsmen, serviceId) {
     }
     
     container.innerHTML = craftsmen.map(c => `
-        <div class="craftsman-card">
-            <div class="craftsman-info">
-                <h3>${c.name || 'اسم غير معروف'} ${c.is_verified ? '✅' : ''}</h3>
-                <p>
-                    <span class="rating">⭐ ${c.rating || '0.0'}</span> · 
-                    <span class="distance">📏 ${c.distance ? c.distance.toFixed(1) : '?'} كم</span>
-                </p>
-            </div>
-            <div class="contact-buttons">
-                <a href="https://wa.me/216${c.phone}" target="_blank" class="btn-whatsapp">💬 واتساب</a>
-                <a href="tel:+216${c.phone}" class="btn-call">📞 اتصال</a>
-            </div>
+    <div class="craftsman-card" onclick="showCraftsmanDetails(${c.id})" style="cursor: pointer;">
+        <div class="craftsman-info">
+            <h3>${c.name || 'اسم غير معروف'} ${c.is_verified ? '✅' : ''}</h3>
+            <p>
+                <span class="rating">⭐ ${c.rating || '0.0'}</span> · 
+                <span class="distance">📏 ${c.distance ? c.distance.toFixed(1) : '?'} كم</span>
+            </p>
         </div>
-    `).join('');
+        <div class="contact-buttons" onclick="event.stopPropagation()">
+            <a href="https://wa.me/216${c.phone}" target="_blank" class="btn-whatsapp">💬 واتساب</a>
+            <a href="tel:+216${c.phone}" class="btn-call">📞 اتصال</a>
+        </div>
+    </div>
+`).join('');
 }
 
 // Handle Login
@@ -224,3 +227,132 @@ function checkAuthState() {
 function showLoading(show) {
     document.getElementById('loading').classList.toggle('hidden', !show);
 }
+
+// Show craftsman details
+function showCraftsmanDetails(craftsmanId) {
+    const craftsman = currentCraftsmen.find(c => c.id === craftsmanId);
+    if (!craftsman) {
+        alert('الحرفي غير موجود');
+        return;
+    }
+    
+    const serviceNames = { 
+        '1': 'سباك', '2': 'كهربائي', '3': 'تنظيف',
+        '5': 'دهان', '6': 'نجارة', '7': 'تركيب', '8': 'بريكولاج'
+    };
+    
+    const html = `
+        <div class="craftsman-profile">
+            <h2>${craftsman.name} ${craftsman.is_verified ? '✅' : ''}</h2>
+            <p>📞 <a href="tel:+216${craftsman.phone}">${craftsman.phone}</a></p>
+            <p>⭐ ${craftsman.rating || '0.0'} (${craftsman.total_ratings || 0} تقييم)</p>
+            <p>📏 ${craftsman.distance?.toFixed(1) || '?'} كم عنك</p>
+            <p>🔧 الخدمة: ${serviceNames[selectedService] || 'غير محدد'}</p>
+            <button class="btn btn-primary" onclick="requestService(${craftsman.id})">
+                🛠️ طلب الخدمة
+            </button>
+            <button class="btn btn-secondary" onclick="showScreen('results')">
+                ← رجوع للقائمة
+            </button>
+        </div>
+    `;
+    
+    // إنشاء شاشة التفاصيل إذا لم تكن موجودة
+    let detailsScreen = document.getElementById('detailsScreen');
+    if (!detailsScreen) {
+        detailsScreen = document.createElement('div');
+        detailsScreen.id = 'detailsScreen';
+        detailsScreen.className = 'screen';
+        document.querySelector('.container').appendChild(detailsScreen);
+    }
+    
+    // إنشاء محتوى التفاصيل
+    let detailsContent = document.getElementById('detailsContent');
+    if (!detailsContent) {
+        detailsContent = document.createElement('div');
+        detailsContent.id = 'detailsContent';
+        detailsScreen.appendChild(detailsContent);
+    }
+    
+    detailsContent.innerHTML = html;
+    showScreen('details');
+}
+
+// Request service from craftsman
+async function requestService(craftsmanId) {
+    // التحقق من تسجيل الدخول
+    if (!currentUser) {
+        alert('يجب تسجيل الدخول أولاً لطلب الخدمة');
+        showScreen('login');
+        return;
+    }
+    
+    if (!selectedService) {
+        alert('الرجاء اختيار خدمة أولاً');
+        return;
+    }
+    
+    const craftsman = currentCraftsmen.find(c => c.id === craftsmanId);
+    if (!craftsman) {
+        alert('الحرفي غير موجود');
+        return;
+    }
+    
+    // طلب وصف المشكلة
+    const description = prompt('📝 اكتب وصف المشكلة:\n(مثلاً: حنفية المطبخ تسرب ماء)');
+    if (!description || description.trim() === '') {
+        alert('يجب كتابة وصف للمشكلة');
+        return;
+    }
+    
+    showLoading(true);
+    
+    try {
+        // 1. إنشاء الطلب في قاعدة البيانات
+        const orderResponse = await fetch(`${API_URL}/orders`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: currentUser.id,
+                service_id: selectedService,
+                craftsman_id: craftsmanId,
+                lat: userLocation.lat,
+                lng: userLocation.lng,
+                address_text: description
+            })
+        });
+        
+        const orderData = await orderResponse.json();
+        
+        if (!orderResponse.ok) {
+            throw new Error(orderData.error || 'فشل إنشاء الطلب');
+        }
+        
+        // 2. فتح واتساب مع الحرفي
+        const serviceNames = { 
+            '1': 'سباك', '2': 'كهربائي', '3': 'تنظيف',
+            '5': 'دهان', '6': 'نجارة', '7': 'تركيب', '8': 'بريكولاج'
+        };
+        
+        const message = `مرحباً ${craftsman.name}،\n\nعندي مشكلة في ${serviceNames[selectedService] || 'الخدمة'}:\n${description}\n\nرقمي: ${currentUser.phone}\nالاسم: ${currentUser.name}\n\nمن تطبيق قريب - Qareeb 🛠️`;
+        
+        const whatsappUrl = `https://wa.me/216${craftsman.phone}?text=${encodeURIComponent(message)}`;
+        
+        // 3. تأكيد للمستخدم
+        alert(`✅ تم إرسال طلبك إلى ${craftsman.name}!\nسيتم تحويلك إلى واتساب للتواصل المباشر.`);
+        
+        // 4. فتح واتساب
+        window.open(whatsappUrl, '_blank');
+        
+        // 5. الرجوع للصفحة الرئيسية
+        showScreen('home');
+        
+    } catch (error) {
+        console.error('Order error:', error);
+        alert('❌ خطأ في إرسال الطلب: ' + error.message);
+    } finally {
+        showLoading(false);
+    }
+}
+
+
