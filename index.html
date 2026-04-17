@@ -67,7 +67,15 @@
                 <button id="showRegisterBtn" class="btn-text">حساب جديد</button>
                 <button id="logoutBtn" class="btn-text" style="display: none;" onclick="logout()">🚪 خروج</button>
             </div>
-
+             <!-- أزرار إضافية -->
+<div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center;">
+    <button onclick="showTopCraftsmen()" class="btn-text" style="background: #fbbf24; color: #000; padding: 8px 16px; border-radius: 20px; text-decoration: none;">
+        🏆 أفضل الحرفيين
+    </button>
+    <button id="myOrdersBtn" class="btn-text" onclick="showMyOrders()" style="display: none; background: #667eea; color: white; padding: 8px 16px; border-radius: 20px;">
+        📋 طلباتي
+    </button>
+</div>
             <!-- زر لوحة التحكم - يظهر فقط للحرفي -->
             <div id="dashboardLink" style="display: none; margin-top: 15px;">
                 <button onclick="showDashboard()" class="btn btn-success" style="background: #10b981; width: 100%;">

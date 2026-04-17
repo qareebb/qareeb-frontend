@@ -529,3 +529,36 @@ body {
         width: 100%;
     }
 }
+/* Top Craftsmen Button */
+.btn-top {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: #000;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    transition: transform 0.2s;
+}
+
+.btn-top:hover {
+    transform: scale(1.05);
+}
+
+/* My Orders Button */
+.btn-my-orders {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    transition: transform 0.2s;
+}
+
+.btn-my-orders:hover {
+    transform: scale(1.05);
+}

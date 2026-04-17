@@ -1,5 +1,5 @@
 // API Configuration
-const API_URL = 'https://qareeb-backend-ehvw.onrender.com/api';
+const API_URL = 'https://qareeb-backend-ehvw.onrender.com/api'; // للإنتاج
 
 // Global State
 let selectedService = null;
@@ -40,7 +40,10 @@ function setupEventListeners() {
 // Screen Navigation
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(screenId + 'Screen').classList.add('active');
+    const targetScreen = document.getElementById(screenId + 'Screen');
+    if (targetScreen) {
+        targetScreen.classList.add('active');
+    }
 }
 
 // Service Selection
@@ -69,6 +72,24 @@ function checkUserLocation() {
     } else {
         document.getElementById('locationText').textContent = '📍 صفاقس، المدينة';
     }
+}
+
+// Get badge display
+function getBadgeDisplay(badge, score) {
+    const badges = {
+        '💎 خبير': { icon: '💎', color: '#8B5CF6', bg: '#EDE9FE', label: 'خبير' },
+        '👑 محترف': { icon: '👑', color: '#F59E0B', bg: '#FEF3C7', label: 'محترف' },
+        '⭐ موثوق': { icon: '⭐', color: '#3B82F6', bg: '#DBEAFE', label: 'موثوق' },
+        'عادي': { icon: '🆕', color: '#6B7280', bg: '#F3F4F6', label: 'عادي' }
+    };
+    
+    const badgeInfo = badges[badge] || badges['عادي'];
+    
+    return `
+        <span class="craftsman-badge" style="background: ${badgeInfo.bg}; color: ${badgeInfo.color}; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-right: 8px; display: inline-block;">
+            ${badgeInfo.icon} ${badgeInfo.label} • ${score || 0}
+        </span>
+    `;
 }
 
 // Search Craftsmen
@@ -117,7 +138,13 @@ function displayCraftsmen(craftsmen, serviceId) {
     container.innerHTML = craftsmen.map(c => `
         <div class="craftsman-card" onclick="showCraftsmanDetails(${c.id})" style="cursor: pointer;">
             <div class="craftsman-info">
-                <h3>${c.name || 'اسم غير معروف'} ${c.is_verified ? '✅' : ''}</h3>
+                <h3>
+                    ${c.name || 'اسم غير معروف'} 
+                    ${c.is_verified ? '✅' : ''}
+                </h3>
+                <div style="margin: 5px 0;">
+                    ${getBadgeDisplay(c.badge || 'عادي', c.score || 0)}
+                </div>
                 <p>
                     <span class="rating">⭐ ${c.rating || '0.0'}</span> · 
                     <span class="distance">📏 ${c.distance ? c.distance.toFixed(1) : '?'} كم</span>
@@ -220,8 +247,16 @@ function updateUIAfterAuth() {
         document.getElementById('showRegisterBtn').style.display = 'none';
         document.getElementById('logoutBtn').style.display = 'inline-block';
         
+        const myOrdersBtn = document.getElementById('myOrdersBtn');
+        if (myOrdersBtn) {
+            myOrdersBtn.style.display = 'inline-block';
+        }
+        
         if (currentUser.role === 'craftsman') {
-            document.getElementById('dashboardLink').style.display = 'block';
+            const dashboardLink = document.getElementById('dashboardLink');
+            if (dashboardLink) {
+                dashboardLink.style.display = 'block';
+            }
         }
     }
 }
@@ -235,7 +270,16 @@ function logout() {
     document.getElementById('showLoginBtn').style.display = 'inline-block';
     document.getElementById('showRegisterBtn').style.display = 'inline-block';
     document.getElementById('logoutBtn').style.display = 'none';
-    document.getElementById('dashboardLink').style.display = 'none';
+    
+    const myOrdersBtn = document.getElementById('myOrdersBtn');
+    if (myOrdersBtn) {
+        myOrdersBtn.style.display = 'none';
+    }
+    
+    const dashboardLink = document.getElementById('dashboardLink');
+    if (dashboardLink) {
+        dashboardLink.style.display = 'none';
+    }
     
     showScreen('home');
 }
@@ -246,14 +290,23 @@ function checkAuthState() {
     const user = localStorage.getItem('qareeb_user');
     
     if (token && user) {
-        currentUser = JSON.parse(user);
-        updateUIAfterAuth();
+        try {
+            currentUser = JSON.parse(user);
+            updateUIAfterAuth();
+        } catch (e) {
+            console.error('Error parsing user:', e);
+            localStorage.removeItem('qareeb_token');
+            localStorage.removeItem('qareeb_user');
+        }
     }
 }
 
 // Show/Hide Loading
 function showLoading(show) {
-    document.getElementById('loading').classList.toggle('hidden', !show);
+    const loading = document.getElementById('loading');
+    if (loading) {
+        loading.classList.toggle('hidden', !show);
+    }
 }
 
 // Show craftsman details
@@ -273,15 +326,17 @@ async function showCraftsmanDetails(craftsmanId) {
     let reviewsHtml = '<p>⭐ لا توجد تقييمات بعد</p>';
     try {
         const reviewsResponse = await fetch(`${API_URL}/orders/reviews/craftsman/${craftsmanId}`);
-        const reviews = await reviewsResponse.json();
-        if (reviews.length > 0) {
-            reviewsHtml = reviews.slice(0, 3).map(r => `
-                <div class="review-item">
-                    <p><strong>${r.user_name || 'مستخدم'}</strong> - ${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</p>
-                    <p>${r.comment || 'بدون تعليق'}</p>
-                    <small>${new Date(r.created_at).toLocaleDateString('ar-TN')}</small>
-                </div>
-            `).join('');
+        if (reviewsResponse.ok) {
+            const reviews = await reviewsResponse.json();
+            if (reviews.length > 0) {
+                reviewsHtml = reviews.slice(0, 5).map(r => `
+                    <div class="review-item">
+                        <p><strong>${r.user_name || 'مستخدم'}</strong> - ${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</p>
+                        <p>${r.comment || 'بدون تعليق'}</p>
+                        <small>${new Date(r.created_at).toLocaleDateString('ar-TN')}</small>
+                    </div>
+                `).join('');
+            }
         }
     } catch (error) {
         console.error('Error loading reviews:', error);
@@ -290,6 +345,9 @@ async function showCraftsmanDetails(craftsmanId) {
     const html = `
         <div class="craftsman-profile">
             <h2>${craftsman.name} ${craftsman.is_verified ? '✅' : ''}</h2>
+            <div style="margin: 10px 0;">
+                ${getBadgeDisplay(craftsman.badge || 'عادي', craftsman.score || 0)}
+            </div>
             <p>📞 <a href="tel:+216${craftsman.phone}">${craftsman.phone}</a></p>
             <p>⭐ ${craftsman.rating || '0.0'} (${craftsman.total_ratings || 0} تقييم)</p>
             <p>📏 ${craftsman.distance?.toFixed(1) || '?'} كم عنك</p>
@@ -300,7 +358,7 @@ async function showCraftsmanDetails(craftsmanId) {
             </button>
             
             <div class="reviews-section">
-                <h3>⭐ التقييمات</h3>
+                <h3>⭐ التقييمات الأخيرة</h3>
                 ${reviewsHtml}
             </div>
             
@@ -381,26 +439,204 @@ async function requestService(craftsmanId) {
             '5': 'دهان', '6': 'نجارة', '7': 'تركيب', '8': 'بريكولاج'
         };
         
-        const message = `مرحباً ${craftsman.name}،\n\nعندي مشكلة في ${serviceNames[selectedService] || 'الخدمة'}:\n${description}\n\nرقمي: ${currentUser.phone}\nالاسم: ${currentUser.name}\n\nمن تطبيق قريب - Qareeb 🛠️`;
+        const message = `مرحباً ${craftsman.name}،\n\nعندي مشكلة في ${serviceNames[selectedService] || 'الخدمة'}:\n${description}\n\nرقمي: ${currentUser.phone}\nالاسم: ${currentUser.name}\n\nرقم الطلب: #${orderData.order.id}\n\nمن تطبيق قريب - Qareeb 🛠️`;
         
         const whatsappUrl = `https://wa.me/216${craftsman.phone}?text=${encodeURIComponent(message)}`;
         
-        alert(`✅ تم إرسال طلبك إلى ${craftsman.name}!\nسيتم تحويلك إلى واتساب للتواصل المباشر.`);
+        alert(`✅ تم إرسال طلبك إلى ${craftsman.name}!\n\nرقم الطلب: ${orderData.order.id}\nيمكنك متابعة حالة طلبك من صفحة "طلباتي".\nبعد إتمام الخدمة، ستتمكن من تقييم الحرفي.`);
         
+        // فتح واتساب للتواصل المباشر
         window.open(whatsappUrl, '_blank');
         
-        // عرض شاشة التقييم بعد الطلب
-        setTimeout(() => {
-            if (confirm('هل تريد تقييم الخدمة الآن؟')) {
-                showRatingScreen(orderData.order.id, craftsman.name);
-            } else {
-                showScreen('home');
-            }
-        }, 1000);
+        // الرجوع للصفحة الرئيسية (بدون طلب تقييم)
+        showScreen('home');
         
     } catch (error) {
         console.error('Order error:', error);
         alert('❌ خطأ في إرسال الطلب: ' + error.message);
+    } finally {
+        showLoading(false);
+    }
+}
+
+// ==========================================
+// Top Craftsmen Functions
+// ==========================================
+
+async function showTopCraftsmen() {
+    showLoading(true);
+    
+    try {
+        const response = await fetch(`${API_URL}/craftsmen/top?limit=10`);
+        const topCraftsmen = await response.json();
+        
+        currentCraftsmen = topCraftsmen;
+        
+        let topScreen = document.getElementById('topScreen');
+        if (!topScreen) {
+            topScreen = document.createElement('div');
+            topScreen.id = 'topScreen';
+            topScreen.className = 'screen';
+            document.querySelector('.container').appendChild(topScreen);
+            
+            const backBtn = document.createElement('button');
+            backBtn.className = 'btn-back';
+            backBtn.onclick = () => showScreen('home');
+            backBtn.textContent = '← رجوع';
+            topScreen.appendChild(backBtn);
+            
+            const title = document.createElement('h2');
+            title.textContent = '🏆 أفضل الحرفيين';
+            title.style.textAlign = 'center';
+            title.style.marginBottom = '20px';
+            topScreen.appendChild(title);
+            
+            const listDiv = document.createElement('div');
+            listDiv.id = 'topCraftsmenList';
+            listDiv.className = 'craftsmen-list';
+            topScreen.appendChild(listDiv);
+        }
+        
+        const container = document.getElementById('topCraftsmenList');
+        
+        if (!topCraftsmen || topCraftsmen.length === 0) {
+            container.innerHTML = '<div class="empty-state">😕 لا يوجد حرفيين حالياً</div>';
+        } else {
+            container.innerHTML = topCraftsmen.map((c, index) => `
+                <div class="craftsman-card" onclick="showTopCraftsmanDetails(${c.id})" style="cursor: pointer;">
+                    <div class="craftsman-info">
+                        <h3>
+                            ${index + 1}. ${c.name || 'اسم غير معروف'} 
+                            ${c.is_verified ? '✅' : ''}
+                        </h3>
+                        <div style="margin: 5px 0;">
+                            ${getBadgeDisplay(c.badge || 'عادي', c.score || 0)}
+                        </div>
+                        <p>
+                            <span class="rating">⭐ ${c.rating || '0.0'}</span> · 
+                            <span>🏆 Score: ${c.score || 0}</span>
+                        </p>
+                    </div>
+                    <div class="contact-buttons" onclick="event.stopPropagation()">
+                        <a href="https://wa.me/216${c.phone}" target="_blank" class="btn-whatsapp">💬 واتساب</a>
+                        <a href="tel:+216${c.phone}" class="btn-call">📞 اتصال</a>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        showScreen('top');
+        
+    } catch (error) {
+        console.error('Top craftsmen error:', error);
+        alert('خطأ في تحميل أفضل الحرفيين');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function showTopCraftsmanDetails(craftsmanId) {
+    // استخدام نفس دالة showCraftsmanDetails مع تعديل بسيط
+    const craftsman = currentCraftsmen.find(c => c.id === craftsmanId);
+    if (craftsman) {
+        selectedService = craftsman.service_id || 1;
+        showCraftsmanDetails(craftsmanId);
+    }
+}
+
+// ==========================================
+// My Orders Functions
+// ==========================================
+
+async function showMyOrders() {
+    if (!currentUser) {
+        alert('يجب تسجيل الدخول أولاً');
+        showScreen('login');
+        return;
+    }
+    
+    showLoading(true);
+    
+    try {
+        const response = await fetch(`${API_URL}/orders/user/${currentUser.id}`);
+        const orders = await response.json();
+        
+        const serviceNames = { 
+            '1': 'سباك', '2': 'كهربائي', '3': 'تنظيف',
+            '5': 'دهان', '6': 'نجارة', '7': 'تركيب', '8': 'بريكولاج'
+        };
+        
+        const statusNames = {
+            'pending': '⏳ قيد الانتظار',
+            'accepted': '✅ مقبول',
+            'on_the_way': '🚗 في الطريق',
+            'done': '✔️ منتهي',
+            'cancelled': '❌ ملغي'
+        };
+        
+        let myOrdersScreen = document.getElementById('myOrdersScreen');
+        if (!myOrdersScreen) {
+            myOrdersScreen = document.createElement('div');
+            myOrdersScreen.id = 'myOrdersScreen';
+            myOrdersScreen.className = 'screen';
+            document.querySelector('.container').appendChild(myOrdersScreen);
+            
+            const backBtn = document.createElement('button');
+            backBtn.className = 'btn-back';
+            backBtn.onclick = () => showScreen('home');
+            backBtn.textContent = '← رجوع';
+            myOrdersScreen.appendChild(backBtn);
+            
+            const title = document.createElement('h2');
+            title.textContent = '📋 طلباتي';
+            myOrdersScreen.appendChild(title);
+            
+            const listDiv = document.createElement('div');
+            listDiv.id = 'myOrdersList';
+            myOrdersScreen.appendChild(listDiv);
+        }
+        
+        const listContainer = document.getElementById('myOrdersList');
+        
+        const html = orders.length === 0 ? 
+            '<p class="empty-state">😕 لا توجد طلبات حالياً</p>' :
+            orders.map(order => `
+                <div class="order-card">
+                    <div class="order-header">
+                        <span class="order-status">${statusNames[order.status] || order.status}</span>
+                        <span class="order-date">${new Date(order.created_at).toLocaleDateString('ar-TN')}</span>
+                    </div>
+                    <p><strong>🔧 الخدمة:</strong> ${serviceNames[order.service_id] || 'غير محدد'}</p>
+                    <p><strong>👷 الحرفي:</strong> ${order.craftsman_name || 'لم يتم التعيين بعد'}</p>
+                    <p><strong>📝 المشكلة:</strong> ${order.address_text}</p>
+                    <p><strong>📅 رقم الطلب:</strong> #${order.id}</p>
+                    
+                    ${order.status === 'done' && !order.has_review ? `
+                        <div class="order-actions">
+                            <button class="btn-success" onclick="showRatingScreen(${order.id}, '${order.craftsman_name || 'الحرفي'}')">
+                                ⭐ تقييم الخدمة
+                            </button>
+                        </div>
+                    ` : ''}
+                    
+                    ${order.status === 'done' && order.has_review ? `
+                        <p class="text-success" style="color: #10b981; font-weight: bold;">✅ تم التقييم - شكراً لك!</p>
+                    ` : ''}
+                    
+                    ${order.status === 'accepted' ? `
+                        <div class="order-actions">
+                            <a href="https://wa.me/216${order.craftsman_phone || ''}" target="_blank" class="btn-whatsapp">💬 تواصل مع الحرفي</a>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        
+        listContainer.innerHTML = html;
+        showScreen('myOrders');
+        
+    } catch (error) {
+        console.error('My orders error:', error);
+        alert('خطأ في تحميل الطلبات');
     } finally {
         showLoading(false);
     }
@@ -424,6 +660,28 @@ function showRatingScreen(orderId, craftsmanName) {
             <button class="btn btn-primary" onclick="submitReview(${orderId})">📤 إرسال التقييم</button>
         </div>
     `;
+    
+    let ratingScreen = document.getElementById('ratingScreen');
+    if (!ratingScreen) {
+        ratingScreen = document.createElement('div');
+        ratingScreen.id = 'ratingScreen';
+        ratingScreen.className = 'screen';
+        document.querySelector('.container').appendChild(ratingScreen);
+        
+        const backBtn = document.createElement('button');
+        backBtn.className = 'btn-back';
+        backBtn.onclick = () => showScreen('myOrders');
+        backBtn.textContent = '← رجوع';
+        ratingScreen.appendChild(backBtn);
+        
+        const title = document.createElement('h2');
+        title.textContent = '⭐ تقييم الخدمة';
+        ratingScreen.appendChild(title);
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.id = 'ratingContent';
+        ratingScreen.appendChild(contentDiv);
+    }
     
     document.getElementById('ratingContent').innerHTML = html;
     showScreen('rating');
@@ -464,10 +722,11 @@ async function submitReview(orderId) {
         const data = await response.json();
         
         if (response.ok) {
-            alert('✅ شكراً لتقييمك!');
-            showScreen('home');
+            alert(`✅ شكراً لتقييمك!\n\nتقييمك يساعد الآخرين في اختيار أفضل حرفي.\n\nالحرفي الآن حصل على:\n⭐ Score: ${data.score || 0}\n${data.badge || 'عادي'}`);
+            selectedRating = 0;
+            showMyOrders();
         } else {
-            alert(data.error || 'خطأ في إرسال التقييم');
+            alert(data.error || 'لا يمكن التقييم الآن. تأكد أن الطلب منتهي.');
         }
     } catch (error) {
         console.error('Review error:', error);
@@ -580,7 +839,6 @@ async function updateOrderStatus(orderId, status) {
         });
         
         if (response.ok) {
-            // تحديد التبويب النشط
             const activeTab = document.querySelector('#dashboardTabs button:focus') || 
                              document.querySelector('#dashboardTabs button');
             let currentStatus = 'pending';
@@ -589,9 +847,10 @@ async function updateOrderStatus(orderId, status) {
                 else if (activeTab.textContent.includes('منتهية')) currentStatus = 'done';
             }
             
-            // إذا قبل الطلب، نعرض تبويب المقبولة
             if (status === 'accepted') {
                 loadOrders('accepted');
+            } else if (status === 'done') {
+                loadOrders('done');
             } else {
                 loadOrders(currentStatus);
             }
@@ -600,6 +859,102 @@ async function updateOrderStatus(orderId, status) {
         }
     } catch (error) {
         console.error('Update error:', error);
+        alert('خطأ في الاتصال بالسيرفر');
+    } finally {
+        showLoading(false);
+    }
+}
+// ==========================================
+// Customer Rating Functions (Craftsman reviews Customer)
+// ==========================================
+
+let selectedCustomerRating = 0;
+
+function showCustomerRatingScreen(orderId, customerName) {
+    const html = `
+        <div class="rating-container">
+            <h3>تقييم العميل: ${customerName}</h3>
+            <p>كيف كان تعامل العميل؟</p>
+            <div class="stars-container">
+                ${[1,2,3,4,5].map(i => `
+                    <span class="star" onclick="setCustomerRating(${i})" id="customerStar${i}">☆</span>
+                `).join('')}
+            </div>
+            <textarea id="customerReviewComment" placeholder="تعليقك (اختياري)" rows="3"></textarea>
+            <button class="btn btn-primary" onclick="submitCustomerReview(${orderId})">📤 إرسال التقييم</button>
+        </div>
+    `;
+    
+    let ratingScreen = document.getElementById('customerRatingScreen');
+    if (!ratingScreen) {
+        ratingScreen = document.createElement('div');
+        ratingScreen.id = 'customerRatingScreen';
+        ratingScreen.className = 'screen';
+        document.querySelector('.container').appendChild(ratingScreen);
+        
+        const backBtn = document.createElement('button');
+        backBtn.className = 'btn-back';
+        backBtn.onclick = () => showDashboard();
+        backBtn.textContent = '← رجوع';
+        ratingScreen.appendChild(backBtn);
+        
+        const title = document.createElement('h2');
+        title.textContent = '⭐ تقييم العميل';
+        ratingScreen.appendChild(title);
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.id = 'customerRatingContent';
+        ratingScreen.appendChild(contentDiv);
+    }
+    
+    document.getElementById('customerRatingContent').innerHTML = html;
+    showScreen('customerRating');
+}
+
+function setCustomerRating(rating) {
+    selectedCustomerRating = rating;
+    document.querySelectorAll('#customerRatingContent .star').forEach((star, index) => {
+        star.textContent = index < rating ? '★' : '☆';
+    });
+}
+
+async function submitCustomerReview(orderId) {
+    if (selectedCustomerRating === 0) {
+        alert('الرجاء اختيار تقييم');
+        return;
+    }
+    
+    const comment = document.getElementById('customerReviewComment')?.value || '';
+    const token = localStorage.getItem('qareeb_token');
+    
+    showLoading(true);
+    
+    try {
+        const response = await fetch(`${API_URL}/orders/customer-review`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                order_id: orderId,
+                rating: selectedCustomerRating,
+                comment: comment
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert(`✅ تم تقييم العميل بنجاح!\n\nالعميل حصل على:\n⭐ Score: ${data.customer_score || 0}\n${data.customer_badge || 'عادي'}`);
+            selectedCustomerRating = 0;
+            showDashboard();
+            loadOrders('done');
+        } else {
+            alert(data.error || 'خطأ في إرسال التقييم');
+        }
+    } catch (error) {
+        console.error('Customer review error:', error);
         alert('خطأ في الاتصال بالسيرفر');
     } finally {
         showLoading(false);
