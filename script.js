@@ -979,47 +979,19 @@ async function submitCustomerReview(orderId) {
 // Forgot Password Functions
 // ==========================================
 
-async function handleForgotPassword(e) {
+async function handleChangePassword(e) {
     e.preventDefault();
     
-    const phone = document.getElementById('forgotPhone').value;
-    currentResetPhone = phone;
+    const currentPassword = document.getElementById('currentPassword').value.trim();
+    const newPassword = document.getElementById('newPassword').value.trim();
+    const confirmPassword = document.getElementById('confirmPassword').value.trim();
     
-    showLoading(true);
-    
-    try {
-        const response = await fetch(`${API_URL}/auth/forgot-password`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            alert('📱 تم إرسال رمز التحقق: ' + (data.debug_code || 'تحقق من هاتفك'));
-            document.getElementById('forgotPasswordForm').reset();
-            showScreen('verifyCode');
-        } else {
-            alert(data.error || 'رقم الهاتف غير موجود');
-        }
-    } catch (error) {
-        console.error('Forgot password error:', error);
-        alert('خطأ في الاتصال بالسيرفر');
-    } finally {
-        showLoading(false);
-    }
-}
-
-async function handleVerifyCode(e) {
-    e.preventDefault();
-    
-    const code = document.getElementById('verificationCode').value;
-    const newPassword = document.getElementById('newPassword').value;
-    const confirmPassword = document.getElementById('confirmNewPassword').value;
+    console.log('Current:', currentPassword);
+    console.log('New:', newPassword);
+    console.log('Confirm:', confirmPassword);
     
     if (newPassword !== confirmPassword) {
-        alert('كلمة المرور غير متطابقة');
+        alert('كلمة المرور الجديدة غير متطابقة');
         return;
     }
     
@@ -1028,35 +1000,47 @@ async function handleVerifyCode(e) {
         return;
     }
     
+    const token = localStorage.getItem('qareeb_token');
+    
     showLoading(true);
     
     try {
-        const response = await fetch(`${API_URL}/auth/reset-password`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        const response = await fetch(`${API_URL}/auth/change-password`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({
-                phone: currentResetPhone,
-                code: code,
-                newPassword: newPassword
+                currentPassword,
+                newPassword
             })
         });
         
         const data = await response.json();
         
         if (response.ok) {
-            alert('✅ تم تغيير كلمة المرور بنجاح! يمكنك الآن تسجيل الدخول.');
-            document.getElementById('verifyCodeForm').reset();
-            showScreen('login');
+            alert('✅ تم تغيير كلمة المرور بنجاح!');
+            document.getElementById('changePasswordForm').reset();
+            
+            const returnTo = localStorage.getItem('returnTo');
+            if (returnTo === 'dashboard') {
+                localStorage.removeItem('returnTo');
+                showDashboard();
+            } else {
+                showScreen('home');
+            }
         } else {
-            alert(data.error || 'رمز التحقق غير صحيح أو منتهي الصلاحية');
+            alert(data.error || 'خطأ في تغيير كلمة المرور. تأكد من كلمة المرور الحالية.');
         }
     } catch (error) {
-        console.error('Reset password error:', error);
+        console.error('Change password error:', error);
         alert('خطأ في الاتصال بالسيرفر');
     } finally {
         showLoading(false);
     }
 }
+
 
 // ==========================================
 // Change Password Functions
