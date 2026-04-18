@@ -1019,8 +1019,8 @@ async function handleVerifyCode(e) {
     e.preventDefault();
     
     const code = document.getElementById('verificationCode').value.trim();
-    const newPassword = document.getElementById('newPassword').value.trim();
-    const confirmPassword = document.getElementById('confirmNewPassword').value.trim();
+    const newPassword = document.getElementById('resetNewPassword').value.trim();
+    const confirmPassword = document.getElementById('resetConfirmPassword').value.trim();
     
     if (newPassword !== confirmPassword) {
         alert('كلمة المرور غير متطابقة');
