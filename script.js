@@ -1018,9 +1018,9 @@ async function handleForgotPassword(e) {
 async function handleVerifyCode(e) {
     e.preventDefault();
     
-    const code = document.getElementById('verificationCode').value;
-    const newPassword = document.getElementById('newPassword').value;
-    const confirmPassword = document.getElementById('confirmNewPassword').value;
+    const code = document.getElementById('verificationCode').value.trim();
+    const newPassword = document.getElementById('newPassword').value.trim();
+    const confirmPassword = document.getElementById('confirmNewPassword').value.trim();
     
     if (newPassword !== confirmPassword) {
         alert('كلمة المرور غير متطابقة');
@@ -1079,9 +1079,15 @@ function showChangePasswordScreen() {
 async function handleChangePassword(e) {
     e.preventDefault();
     
-    const currentPassword = document.getElementById('currentPassword').value;
-    const newPassword = document.getElementById('newPassword').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
+    // استخدام trim() لإزالة المسافات البيضاء
+    const currentPassword = document.getElementById('currentPassword').value.trim();
+    const newPassword = document.getElementById('newPassword').value.trim();
+    const confirmPassword = document.getElementById('confirmPassword').value.trim();
+    
+    // للتأكد من القيم (يمكنك حذف هذا لاحقاً)
+    console.log('Current:', currentPassword);
+    console.log('New:', newPassword);
+    console.log('Confirm:', confirmPassword);
     
     if (newPassword !== confirmPassword) {
         alert('كلمة المرور الجديدة غير متطابقة');
@@ -1095,6 +1101,12 @@ async function handleChangePassword(e) {
     
     const token = localStorage.getItem('qareeb_token');
     
+    if (!token) {
+        alert('يجب تسجيل الدخول أولاً');
+        showScreen('login');
+        return;
+    }
+    
     showLoading(true);
     
     try {
@@ -1105,8 +1117,8 @@ async function handleChangePassword(e) {
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
-                currentPassword,
-                newPassword
+                currentPassword: currentPassword,
+                newPassword: newPassword
             })
         });
         
