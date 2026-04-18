@@ -1,51 +1,91 @@
-// API Configuration
-const API_URL = 'https://qareeb-backend-ehvw.onrender.com/api'; // للإنتاج
+// ==========================================
+// Click Tracking System
+// ==========================================
 
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbylvlclz8e-EqusTiWklFxGsoiZybWfjfA24CWGBP7tmMAcgVl7Oe37HHnuyioZwZBB_w/exec';
+
+// تتبع النقرات
+async function trackClick(craftsmanId, craftsmanName, action) {
+    try {
+        await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                craftsman_id: craftsmanId,
+                craftsman_name: craftsmanName,
+                service_type: getServiceName(selectedService),
+                action: action
+            })
+        });
+        console.log(`📊 Tracked: ${action} - ${craftsmanName}`);
+    } catch (error) {
+        console.warn('Tracking error (non-critical):', error);
+    }
+}
+
+// الحصول على اسم الخدمة
+function getServiceName(serviceId) {
+    const serviceNames = { 
+        '1': 'سباك', '2': 'كهربائي', '3': 'تنظيف',
+        '5': 'دهان', '6': 'نجارة', '7': 'تركيب', '8': 'بريكولاج'
+    };
+    return serviceNames[serviceId] || 'غير محدد';
+}
+
+// ==========================================
+// API Configuration
+// ==========================================
+
+const API_URL = 'https://qareeb-backend-ehvw.onrender.com/api';
+
+// ==========================================
 // Global State
+// ==========================================
+
 let selectedService = null;
 let currentUser = null;
 let currentCraftsmen = []; 
-let userLocation = { lat: 34.7400, lng: 10.7600 }; // Default: Sfax
+let userLocation = { lat: 34.7400, lng: 10.7600 };
 let selectedRating = 0;
 let currentResetPhone = '';
 
+// ==========================================
 // Initialize
+// ==========================================
+
 document.addEventListener('DOMContentLoaded', () => {
     checkUserLocation();
     setupEventListeners();
     checkAuthState();
     
-    // Forgot Password Forms
     document.getElementById('forgotPasswordForm')?.addEventListener('submit', handleForgotPassword);
     document.getElementById('verifyCodeForm')?.addEventListener('submit', handleVerifyCode);
     document.getElementById('changePasswordForm')?.addEventListener('submit', handleChangePassword);
 });
 
+// ==========================================
 // Setup Event Listeners
+// ==========================================
+
 function setupEventListeners() {
-    // Service selection
     document.querySelectorAll('.service-card').forEach(card => {
         card.addEventListener('click', () => selectService(card.dataset.service, card));
     });
 
-    // Search button
     document.getElementById('searchBtn').addEventListener('click', searchCraftsmen);
-
-    // Auth navigation
     document.getElementById('showLoginBtn').addEventListener('click', () => showScreen('login'));
     document.getElementById('showRegisterBtn').addEventListener('click', () => showScreen('register'));
-
-    // Forms
     document.getElementById('loginForm').addEventListener('submit', handleLogin);
     document.getElementById('registerForm').addEventListener('submit', handleRegister);
-
-    // Back button
     document.getElementById('backBtn').addEventListener('click', () => showScreen('home'));
 }
 
+// ==========================================
 // Screen Navigation
+// ==========================================
+
 function showScreen(screenId) {
-    // إذا رجع للصفحة الرئيسية وكان عنده returnTo للوحة التحكم
     if (screenId === 'home') {
         const returnTo = localStorage.getItem('returnTo');
         if (returnTo === 'dashboard' && currentUser && currentUser.role === 'craftsman') {
@@ -62,7 +102,10 @@ function showScreen(screenId) {
     }
 }
 
+// ==========================================
 // Service Selection
+// ==========================================
+
 function selectService(serviceId, element) {
     document.querySelectorAll('.service-card').forEach(c => c.classList.remove('selected'));
     element.classList.add('selected');
@@ -70,7 +113,10 @@ function selectService(serviceId, element) {
     document.getElementById('searchBtn').disabled = false;
 }
 
+// ==========================================
 // Get User Location
+// ==========================================
+
 function checkUserLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -90,7 +136,10 @@ function checkUserLocation() {
     }
 }
 
-// Get badge display
+// ==========================================
+// Get Badge Display
+// ==========================================
+
 function getBadgeDisplay(badge, score) {
     const badges = {
         '💎 خبير': { icon: '💎', color: '#8B5CF6', bg: '#EDE9FE', label: 'خبير' },
@@ -108,7 +157,10 @@ function getBadgeDisplay(badge, score) {
     `;
 }
 
+// ==========================================
 // Search Craftsmen
+// ==========================================
+
 async function searchCraftsmen() {
     if (!selectedService) return;
 
@@ -122,7 +174,6 @@ async function searchCraftsmen() {
         const craftsmen = await response.json();
 
         currentCraftsmen = craftsmen;
-        
         console.log('Found craftsmen:', craftsmen);
         
         displayCraftsmen(craftsmen, selectedService);
@@ -136,7 +187,10 @@ async function searchCraftsmen() {
     }
 }
 
+// ==========================================
 // Display Craftsmen
+// ==========================================
+
 function displayCraftsmen(craftsmen, serviceId) {
     const serviceNames = { 
         '1': 'سباك', '2': 'كهربائي', '3': 'تنظيف',
@@ -167,14 +221,22 @@ function displayCraftsmen(craftsmen, serviceId) {
                 </p>
             </div>
             <div class="contact-buttons" onclick="event.stopPropagation()">
-                <a href="https://wa.me/216${c.phone}" target="_blank" class="btn-whatsapp">💬 واتساب</a>
-                <a href="tel:+216${c.phone}" class="btn-call">📞 اتصال</a>
+                <a href="https://wa.me/216${c.phone}" 
+                   target="_blank" 
+                   class="btn-whatsapp"
+                   onclick="trackClick(${c.id}, '${c.name}', 'whatsapp_click')">💬 واتساب</a>
+                <a href="tel:+216${c.phone}" 
+                   class="btn-call"
+                   onclick="trackClick(${c.id}, '${c.name}', 'call_click')">📞 اتصال</a>
             </div>
         </div>
     `).join('');
 }
 
+// ==========================================
 // Handle Login
+// ==========================================
+
 async function handleLogin(e) {
     e.preventDefault();
     
@@ -213,7 +275,10 @@ async function handleLogin(e) {
     }
 }
 
+// ==========================================
 // Handle Register
+// ==========================================
+
 async function handleRegister(e) {
     e.preventDefault();
     
@@ -256,7 +321,10 @@ async function handleRegister(e) {
     }
 }
 
-// Update UI after login/register
+// ==========================================
+// Update UI After Auth
+// ==========================================
+
 function updateUIAfterAuth() {
     if (currentUser) {
         document.getElementById('showLoginBtn').style.display = 'none';
@@ -277,7 +345,10 @@ function updateUIAfterAuth() {
     }
 }
 
+// ==========================================
 // Logout
+// ==========================================
+
 function logout() {
     localStorage.removeItem('qareeb_token');
     localStorage.removeItem('qareeb_user');
@@ -287,7 +358,6 @@ function logout() {
     document.getElementById('showRegisterBtn').style.display = 'inline-block';
     document.getElementById('logoutBtn').style.display = 'none';
     
-    // تأكد من وجود العنصر قبل استخدامه
     const profileLinks = document.getElementById('profileLinks');
     if (profileLinks) {
         profileLinks.style.display = 'none';
@@ -306,7 +376,10 @@ function logout() {
     showScreen('home');
 }
 
+// ==========================================
 // Check Auth State
+// ==========================================
+
 function checkAuthState() {
     const token = localStorage.getItem('qareeb_token');
     const user = localStorage.getItem('qareeb_user');
@@ -323,7 +396,10 @@ function checkAuthState() {
     }
 }
 
+// ==========================================
 // Show/Hide Loading
+// ==========================================
+
 function showLoading(show) {
     const loading = document.getElementById('loading');
     if (loading) {
@@ -331,7 +407,10 @@ function showLoading(show) {
     }
 }
 
-// Show craftsman details
+// ==========================================
+// Show Craftsman Details
+// ==========================================
+
 async function showCraftsmanDetails(craftsmanId) {
     const craftsman = currentCraftsmen.find(c => c.id === craftsmanId);
     if (!craftsman) {
@@ -369,7 +448,7 @@ async function showCraftsmanDetails(craftsmanId) {
             <div style="margin: 10px 0;">
                 ${getBadgeDisplay(craftsman.badge || 'عادي', craftsman.score || 0)}
             </div>
-            <p>📞 <a href="tel:+216${craftsman.phone}">${craftsman.phone}</a></p>
+            <p>📞 <a href="tel:+216${craftsman.phone}" onclick="trackClick(${craftsman.id}, '${craftsman.name}', 'call_click_details')">${craftsman.phone}</a></p>
             <p>⭐ ${craftsman.rating || '0.0'} (${craftsman.total_ratings || 0} تقييم)</p>
             <p>📏 ${craftsman.distance?.toFixed(1) || '?'} كم عنك</p>
             <p>🔧 الخدمة: ${serviceNames[selectedService] || 'غير محدد'}</p>
@@ -408,7 +487,10 @@ async function showCraftsmanDetails(craftsmanId) {
     showScreen('details');
 }
 
-// Request service from craftsman
+// ==========================================
+// Request Service
+// ==========================================
+
 async function requestService(craftsmanId) {
     if (!currentUser) {
         alert('يجب تسجيل الدخول أولاً لطلب الخدمة');
@@ -426,6 +508,8 @@ async function requestService(craftsmanId) {
         alert('الحرفي غير موجود');
         return;
     }
+    
+    trackClick(craftsmanId, craftsman.name, 'service_requested');
     
     const description = prompt('📝 اكتب وصف المشكلة:\n(مثلاً: حنفية المطبخ تسرب ماء)');
     if (!description || description.trim() === '') {
@@ -536,8 +620,8 @@ async function showTopCraftsmen() {
                         </p>
                     </div>
                     <div class="contact-buttons" onclick="event.stopPropagation()">
-                        <a href="https://wa.me/216${c.phone}" target="_blank" class="btn-whatsapp">💬 واتساب</a>
-                        <a href="tel:+216${c.phone}" class="btn-call">📞 اتصال</a>
+                        <a href="https://wa.me/216${c.phone}" target="_blank" class="btn-whatsapp" onclick="trackClick(${c.id}, '${c.name}', 'whatsapp_click')">💬 واتساب</a>
+                        <a href="tel:+216${c.phone}" class="btn-call" onclick="trackClick(${c.id}, '${c.name}', 'call_click')">📞 اتصال</a>
                     </div>
                 </div>
             `).join('');
@@ -642,6 +726,7 @@ async function showMyOrders() {
                     
                     ${order.status === 'accepted' ? `
                         <div class="order-actions">
+                            <p><strong>📞 رقم الحرفي:</strong> ${order.craftsman_phone || ''}</p>
                             <a href="https://wa.me/216${order.craftsman_phone || ''}" target="_blank" class="btn-whatsapp">💬 تواصل مع الحرفي</a>
                         </div>
                     ` : ''}
@@ -827,6 +912,14 @@ async function loadOrders(status) {
                             <a href="https://wa.me/216${order.user_phone}" target="_blank" class="btn-whatsapp">💬 واتساب</a>
                         </div>
                     ` : ''}
+                    
+                    ${status === 'done' && !order.has_customer_review ? `
+                        <div class="order-actions">
+                            <button class="btn-warning" onclick="showCustomerRatingScreen(${order.id}, '${order.user_name || 'العميل'}')">
+                                ⭐ تقييم العميل
+                            </button>
+                        </div>
+                    ` : ''}
                 </div>
             `).join('');
         
@@ -883,7 +976,7 @@ async function updateOrderStatus(orderId, status) {
 }
 
 // ==========================================
-// Customer Rating Functions (Craftsman reviews Customer)
+// Customer Rating Functions
 // ==========================================
 
 let selectedCustomerRating = 0;
@@ -1062,7 +1155,6 @@ async function handleVerifyCode(e) {
     }
 }
 
-
 // ==========================================
 // Change Password Functions
 // ==========================================
@@ -1079,12 +1171,10 @@ function showChangePasswordScreen() {
 async function handleChangePassword(e) {
     e.preventDefault();
     
-    // استخدام trim() لإزالة المسافات البيضاء
     const currentPassword = document.getElementById('currentPassword').value.trim();
     const newPassword = document.getElementById('newPassword').value.trim();
     const confirmPassword = document.getElementById('confirmPassword').value.trim();
     
-    // للتأكد من القيم (يمكنك حذف هذا لاحقاً)
     console.log('Current:', currentPassword);
     console.log('New:', newPassword);
     console.log('Confirm:', confirmPassword);
