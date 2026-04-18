@@ -2,14 +2,13 @@
 // Click Tracking System
 // ==========================================
 
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbylvlclz8e-EqusTiWklFxGsoiZybWfjfA24CWGBP7tmMAcgVl7Oe37HHnuyioZwZBB_w/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxg1o9kCiByDilI8pDJyEEBVFKU3bM5Xt9kCob1OZNBkssXfieqWphQU2UqGVgrZzHhHg/exec';
 
 // تتبع النقرات
 async function trackClick(craftsmanId, craftsmanName, action) {
     try {
-        await fetch(GOOGLE_SCRIPT_URL, {
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 craftsman_id: craftsmanId,
@@ -18,9 +17,10 @@ async function trackClick(craftsmanId, craftsmanName, action) {
                 action: action
             })
         });
-        console.log(`📊 Tracked: ${action} - ${craftsmanName}`);
+        const data = await response.json();
+        console.log(`📊 Tracked: ${action} - ${craftsmanName}`, data);
     } catch (error) {
-        console.warn('Tracking error (non-critical):', error);
+        console.warn('Tracking error:', error);
     }
 }
 
