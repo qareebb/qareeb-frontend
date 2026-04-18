@@ -262,7 +262,6 @@ function updateUIAfterAuth() {
         document.getElementById('showLoginBtn').style.display = 'none';
         document.getElementById('showRegisterBtn').style.display = 'none';
         document.getElementById('logoutBtn').style.display = 'inline-block';
-        document.getElementById('profileLinks').style.display = 'block';
         
         const myOrdersBtn = document.getElementById('myOrdersBtn');
         if (myOrdersBtn) {
@@ -287,7 +286,12 @@ function logout() {
     document.getElementById('showLoginBtn').style.display = 'inline-block';
     document.getElementById('showRegisterBtn').style.display = 'inline-block';
     document.getElementById('logoutBtn').style.display = 'none';
-    document.getElementById('profileLinks').style.display = 'none';
+    
+    // تأكد من وجود العنصر قبل استخدامه
+    const profileLinks = document.getElementById('profileLinks');
+    if (profileLinks) {
+        profileLinks.style.display = 'none';
+    }
     
     const myOrdersBtn = document.getElementById('myOrdersBtn');
     if (myOrdersBtn) {
