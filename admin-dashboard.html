@@ -202,46 +202,46 @@ async function loadData() {
         }
         
         function sendInvite(id, name) {
-            const clicks = JSON.parse(localStorage.getItem('qareeb_clicks') || '[]');
-            const craftsman = clicks.find(c => c.craftsman_id == id);
-            let craftsmanPhone = craftsman?.craftsman_phone || '';
-            
-            if (!craftsmanPhone) {
-                craftsmanPhone = prompt(`أدخل رقم هاتف ${name} (8 أرقام):`);
-                if (!craftsmanPhone) return;
-            }
-            
-            craftsmanPhone = craftsmanPhone.replace(/\D/g, '');
-            if (craftsmanPhone.startsWith('216')) {
-                craftsmanPhone = craftsmanPhone.substring(3);
-            }
-            
-            const msg = `السلام عليكم ${name}،\n\n` +
-                       `معاكم منصة "قريب - Qareeb" 🛠️\n\n` +
-                       `في أكثر من عميل مهتم بخدمتك 👀\n` +
-                       `المنصة مجانية 🎁\n\n` +
-                       `تحب نضيفك؟\n\n` +
-                       `للتفعيل:\n` +
-                       `🔗 https://qareeb-s2f5.onrender.com/set-password\n` +
-                       `📞 ${craftsmanPhone}\n` +
-                       `🔑 ${craftsmanPhone}`;
-            
-            // نسخ الرسالة وعرضها
-            navigator.clipboard?.writeText(msg).then(() => {
-                alert(`✅ تم نسخ الرسالة!\n\n📞 أرسل إلى: +216 ${craftsmanPhone}\n\nافتح واتساب والصق الرسالة`);
-            }).catch(() => {
-                prompt(`انسخ هذه الرسالة وأرسلها إلى +216 ${craftsmanPhone}:`, msg);
-            });
-            
-            // محاولة فتح واتساب
-            const whatsappUrl = `https://wa.me/216${craftsmanPhone}?text=${encodeURIComponent(msg)}`;
-            window.open(whatsappUrl, '_blank');
-            
-            const invites = JSON.parse(localStorage.getItem('invites_sent') || '[]');
-            invites.push(id.toString());
-            localStorage.setItem('invites_sent', JSON.stringify(invites));
-            loadData();
-        }
+    const clicks = JSON.parse(localStorage.getItem('qareeb_clicks') || '[]');
+    const craftsman = clicks.find(c => c.craftsman_id == id);
+    let craftsmanPhone = craftsman?.craftsman_phone || '';
+    
+    if (!craftsmanPhone) {
+        craftsmanPhone = prompt(`أدخل رقم هاتف ${name} (8 أرقام):`);
+        if (!craftsmanPhone) return;
+    }
+    
+    craftsmanPhone = craftsmanPhone.replace(/\D/g, '');
+    if (craftsmanPhone.startsWith('216')) {
+        craftsmanPhone = craftsmanPhone.substring(3);
+    }
+    
+    const msg = `السلام عليكم ${name}،\n\n` +
+               `معاكم منصة "قريب - Qareeb" 🛠️\n\n` +
+               `في أكثر من عميل مهتم بخدمتك 👀\n` +
+               `المنصة مجانية 🎁\n\n` +
+               `تحب نضيفك؟\n\n` +
+               `للتفعيل:\n` +
+               `🔗 https://qareeb-s2f5.onrender.com/set-password\n` +
+               `📞 ${craftsmanPhone}\n` +
+               `🔑 ${craftsmanPhone}`;
+    
+    // 🔥 رابط مباشر مثل الصفحة الرئيسية
+    const whatsappUrl = `https://wa.me/216${craftsmanPhone}?text=${encodeURIComponent(msg)}`;
+    
+    // فتح في نافذة جديدة (مثل الصفحة الرئيسية)
+    const newWindow = window.open(whatsappUrl, '_blank');
+    
+    // إذا لم يفتح، استخدم رابط بديل
+    if (!newWindow || newWindow.closed) {
+        window.location.href = whatsappUrl;
+    }
+    
+    const invites = JSON.parse(localStorage.getItem('invites_sent') || '[]');
+    invites.push(id.toString());
+    localStorage.setItem('invites_sent', JSON.stringify(invites));
+    loadData();
+}
         
         function clearAllData() {
             if (confirm('هل أنت متأكد من مسح جميع بيانات النقرات والدعوات؟')) {
