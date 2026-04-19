@@ -1,34 +1,41 @@
 // ==========================================
-// Click Tracking System (Google Sheet)
+// Local Storage for Admin Dashboard
 // ==========================================
 
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRRm5VT_mr6z8SPQ_iuR0dvmUMx5mjW5W8oeKSkOW4EQndqOwJJ0ugwyLMcFffTXbEuQ/exec';
+function storeClickLocally(craftsmanId, craftsmanName, action) {
+    const clickData = {
+        craftsman_id: craftsmanId,
+        craftsman_name: craftsmanName,
+        service_type: getServiceName(selectedService),
+        action: action,
+        timestamp: new Date().toISOString()
+    };
+    
+    let clicks = JSON.parse(localStorage.getItem('qareeb_clicks') || '[]');
+    clicks.push(clickData);
+    
+    // الاحتفاظ بآخر 200 نقرة فقط
+    if (clicks.length > 200) {
+        clicks = clicks.slice(-200);
+    }
+    
+    localStorage.setItem('qareeb_clicks', JSON.stringify(clicks));
+}
+
+// ==========================================
+// Click Tracking System (Simple Console)
+// ==========================================
 
 async function trackClick(craftsmanId, craftsmanName, action) {
+    // تخزين محلي للـ Admin Dashboard
+    storeClickLocally(craftsmanId, craftsmanName, action);
+    
     // تسجيل في console
     console.log(`📊 CLICK TRACKED | Time: ${new Date().toLocaleTimeString()} | ID: ${craftsmanId} | Name: ${craftsmanName} | Action: ${action} | Service: ${getServiceName(selectedService)}`);
     
-    // إرسال إلى Google Sheet
-    try {
-        await fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                craftsman_id: craftsmanId,
-                craftsman_name: craftsmanName,
-                service_type: getServiceName(selectedService),
-                action: action
-            })
-        });
-        console.log(`📤 Sent to Google Sheet`);
-    } catch (error) {
-        console.warn('Google Sheet error (non-critical):', error);
-    }
-    
-    // نسخ احتياطي للصق اليدوي
+    // يمكنك نسخ هذا السطر يدوياً إلى Google Sheet لاحقاً
     const logEntry = `${new Date().toLocaleString()}\t${craftsmanId}\t${craftsmanName}\t${getServiceName(selectedService)}\t${action}`;
-    console.log(`📋 COPY TO SHEET (backup): ${logEntry}`);
+    console.log(`📋 COPY TO SHEET: ${logEntry}`);
 }
 
 function getServiceName(serviceId) {
