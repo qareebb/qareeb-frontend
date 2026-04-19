@@ -1,4 +1,10 @@
 // ==========================================
+// Google Sheet Tracking URL
+// ==========================================
+
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyJebRcH7LjoshSwM13MkGhN5B6thVl0FZECUROIKSB385LpETqtgN9OKIBCgb6cFjq_A/exec';
+
+// ==========================================
 // Local Storage for Admin Dashboard
 // ==========================================
 
@@ -20,28 +26,49 @@ function storeClickLocally(craftsmanId, craftsmanName, action) {
     }
     
     localStorage.setItem('qareeb_clicks', JSON.stringify(clicks));
+    console.log(`💾 Saved to localStorage: ${craftsmanName} - ${action}`);
 }
 
 // ==========================================
-// Click Tracking System (Simple Console)
+// Click Tracking System (Console + Google Sheet)
 // ==========================================
 
 async function trackClick(craftsmanId, craftsmanName, action) {
-    // تخزين محلي للـ Admin Dashboard
+    // 1. تخزين محلي للـ Admin Dashboard
     storeClickLocally(craftsmanId, craftsmanName, action);
     
-    // تسجيل في console
+    // 2. إرسال إلى Google Sheet
+    try {
+        await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                craftsman_id: craftsmanId,
+                craftsman_name: craftsmanName,
+                service_type: getServiceName(selectedService),
+                action: action,
+                timestamp: new Date().toISOString()
+            })
+        });
+        console.log(`📤 Sent to Google Sheet: ${craftsmanName} - ${action}`);
+    } catch (error) {
+        console.warn('Google Sheet error (non-critical):', error);
+    }
+    
+    // 3. تسجيل في console
     console.log(`📊 CLICK TRACKED | Time: ${new Date().toLocaleTimeString()} | ID: ${craftsmanId} | Name: ${craftsmanName} | Action: ${action} | Service: ${getServiceName(selectedService)}`);
     
-    // يمكنك نسخ هذا السطر يدوياً إلى Google Sheet لاحقاً
+    // 4. نسخ احتياطي للصق اليدوي
     const logEntry = `${new Date().toLocaleString()}\t${craftsmanId}\t${craftsmanName}\t${getServiceName(selectedService)}\t${action}`;
-    console.log(`📋 COPY TO SHEET: ${logEntry}`);
+    console.log(`📋 COPY TO SHEET (backup): ${logEntry}`);
 }
 
 function getServiceName(serviceId) {
     const serviceNames = { 
         '1': 'سباك', '2': 'كهربائي', '3': 'تنظيف',
-        '5': 'دهان', '6': 'نجارة', '7': 'تركيب', '8': 'بريكولاج'
+        '5': 'دهان', '6': 'نجارة', '7': 'تركيب', '8': 'بريكولاج',
+        '9': 'أنظمة أمنية'
     };
     return serviceNames[serviceId] || 'غير محدد';
 }
@@ -222,9 +249,10 @@ async function searchCraftsmen() {
 
 function displayCraftsmen(craftsmen, serviceId) {
     const serviceNames = { 
-        '1': 'سباك', '2': 'كهربائي', '3': 'تنظيف',
-        '5': 'دهان', '6': 'نجارة', '7': 'تركيب', '8': 'بريكولاج'
-    };
+    '1': 'سباك', '2': 'كهربائي', '3': 'تنظيف',
+    '5': 'دهان', '6': 'نجارة', '7': 'تركيب', '8': 'بريكولاج',
+    '9': 'أنظمة أمنية'
+};
     document.getElementById('resultsTitle').textContent = `🔧 ${serviceNames[serviceId]} - الأقرب ليك`;
     
     const container = document.getElementById('craftsmenList');
