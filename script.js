@@ -92,6 +92,22 @@ function setupEventListeners() {
     document.getElementById('loginForm').addEventListener('submit', handleLogin);
     document.getElementById('registerForm').addEventListener('submit', handleRegister);
     document.getElementById('backBtn').addEventListener('click', () => showScreen('home'));
+    
+    // ==========================================
+    // إظهار/إخفاء قائمة الخدمات عند تغيير الدور
+    // ==========================================
+    document.querySelectorAll('input[name="role"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const serviceSelector = document.getElementById('serviceSelector');
+            if (this.value === 'craftsman') {
+                serviceSelector.style.display = 'block';
+                document.getElementById('regService').required = true;
+            } else {
+                serviceSelector.style.display = 'none';
+                document.getElementById('regService').required = false;
+            }
+        });
+    });
 }
 
 // ==========================================
@@ -299,8 +315,15 @@ async function handleRegister(e) {
     const phone = document.getElementById('regPhone').value;
     const password = document.getElementById('regPassword').value;
     const role = document.querySelector('input[name="role"]:checked').value;
+    const serviceId = document.getElementById('regService')?.value;
     
-    console.log('Registering:', { name, phone, role });
+    // التحقق من اختيار الخدمة للحرفي
+    if (role === 'craftsman' && !serviceId) {
+        alert('الرجاء اختيار الخدمة');
+        return;
+    }
+    
+    console.log('Registering:', { name, phone, role, serviceId });
     
     showLoading(true);
     
@@ -308,7 +331,13 @@ async function handleRegister(e) {
         const response = await fetch(`${API_URL}/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, phone, password, role })
+            body: JSON.stringify({ 
+                name, 
+                phone, 
+                password, 
+                role,
+                service_id: serviceId || null
+            })
         });
         
         const data = await response.json();
@@ -323,6 +352,7 @@ async function handleRegister(e) {
             alert(`تم إنشاء الحساب بنجاح! مرحباً ${data.user.name}`);
             showScreen('home');
             document.getElementById('registerForm').reset();
+            document.getElementById('serviceSelector').style.display = 'none';
         } else {
             alert(data.error || 'خطأ في إنشاء الحساب. الرقم قد يكون مستخدم مسبقاً.');
         }
