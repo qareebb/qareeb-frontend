@@ -253,10 +253,10 @@ async function searchCraftsmen() {
 
 function displayCraftsmen(craftsmen, serviceId) {
     const serviceNames = { 
-    '1': 'سباك', '2': 'كهربائي', '3': 'تنظيف',
-    '5': 'دهان', '6': 'نجارة', '7': 'تركيب', '8': 'بريكولاج',
-    '9': 'أنظمة أمنية'
-};
+        '1': 'سباك', '2': 'كهربائي', '3': 'تنظيف',
+        '5': 'دهان', '6': 'نجارة', '7': 'تركيب', '8': 'بريكولاج',
+        '9': 'أنظمة أمنية'
+    };
     document.getElementById('resultsTitle').textContent = `🔧 ${serviceNames[serviceId]} - الأقرب ليك`;
     
     const container = document.getElementById('craftsmenList');
@@ -266,7 +266,16 @@ function displayCraftsmen(craftsmen, serviceId) {
         return;
     }
     
-    container.innerHTML = craftsmen.map(c => `
+    container.innerHTML = craftsmen.map(c => {
+        // 🔥 إصلاح المسافة
+        let distanceText = '?';
+        if (c.distance !== undefined && c.distance !== null) {
+            distanceText = parseFloat(c.distance).toFixed(1);
+        } else if (c.distance_km !== undefined) {
+            distanceText = parseFloat(c.distance_km).toFixed(1);
+        }
+        
+        return `
         <div class="craftsman-card" onclick="showCraftsmanDetails(${c.id})" style="cursor: pointer;">
             <div class="craftsman-info">
                 <h3>
@@ -278,7 +287,7 @@ function displayCraftsmen(craftsmen, serviceId) {
                 </div>
                 <p>
                     <span class="rating">⭐ ${c.rating || '0.0'}</span> · 
-                    <span class="distance">📏 ${c.distance ? c.distance.toFixed(1) : '?'} كم</span>
+                    <span class="distance">📏 ${distanceText} كم</span>
                 </p>
             </div>
             <div class="contact-buttons" onclick="event.stopPropagation()">
@@ -291,7 +300,7 @@ function displayCraftsmen(craftsmen, serviceId) {
                    onclick="trackClick(${c.id}, '${c.name}', 'call_click')">📞 اتصال</a>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 // ==========================================
