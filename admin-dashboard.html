@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - قريب</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card .number {
+            color: #1e3a8a;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: #1e3a8a;
+            margin-bottom: 15px;
+            font-size: 20px;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+        
+        .craftsmen-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .craftsmen-table th {
+            text-align: right;
+            padding: 12px;
+            background: #f3f4f6;
+            color: #4b5563;
+            font-weight: bold;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .craftsmen-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .row-cold {
+            background: #f9fafb;
+            opacity: 0.7;
+        }
+        
+        .row-warm {
+            background: #fef3c7;
+        }
+        
+        .row-hot {
+            background: #d1fae5;
+            font-weight: bold;
+        }
+        
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin: 2px;
+        }
+        
+        .badge-whatsapp { background: #25D366; color: white; }
+        .badge-call { background: #3b82f6; color: white; }
+        .badge-request { background: #f59e0b; color: white; }
+        
+        .status-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+        
+        .dot-cold { background: #9ca3af; }
+        .dot-warm { background: #f59e0b; }
+        .dot-hot { background: #10b981; }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 13px;
+        }
+        
+        .btn-invite {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-invite:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+        
+        .btn-disabled {
+            background: #d1d5db;
+            color: #6b7280;
+            cursor: not-allowed;
+        }
+        
+        .refresh-btn {
+            background: white;
+            color: #1e3a8a;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        
+        .auto-refresh {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .rule-box {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+        
+        .rule-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 لوحة تحكم Admin الذكية</h1>
+            <p>استجب لطلب السوق - لا تدعو عشوائياً</p>
+        </div>
+        
+        <div class="rule-box">
+            <div class="rule-item">
+                <span class="status-dot dot-cold"></span>
+                <span>0-1 نقرة: انتظر</span>
+            </div>
+            <div class="rule-item">
+                <span class="status-dot dot-warm"></span>
+                <span>2 نقرات: راقب</span>
+            </div>
+            <div class="rule-item">
+                <span class="status-dot dot-hot"></span>
+                <span>3+ نقرات: أرسل دعوة</span>
+            </div>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>📊 إجمالي النقرات</h3>
+                <div class="number" id="totalClicks">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>🟢 جاهز للدعوة</h3>
+                <div class="number" id="readyToInvite">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>🛠️ طلبات الخدمة</h3>
+                <div class="number" id="serviceRequests">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>📬 دعوات مرسلة</h3>
+                <div class="number" id="invitesSent">0</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="auto-refresh">
+                <h2>👥 الحرفيين (حسب النشاط)</h2>
+                <button class="refresh-btn" onclick="loadData()">🔄 تحديث</button>
+            </div>
+            
+            <table class="craftsmen-table" id="craftsmenTable">
+                <thead>
+                    <tr>
+                        <th>الحالة</th>
+                        <th>الحرفي</th>
+                        <th>واتساب</th>
+                        <th>اتصال</th>
+                        <th>طلب خدمة</th>
+                        <th>المجموع</th>
+                        <th>إجراء</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="7" style="text-align: center;">جاري تحميل البيانات...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        let craftsmenStats = {};
+        let invitesSentCount = 0;
+        
+        function loadData() {
+            const clicks = JSON.parse(localStorage.getItem('qareeb_clicks') || '[]');
+            const invites = JSON.parse(localStorage.getItem('invites_sent') || '[]');
+            
+            invitesSentCount = invites.length;
+            
+            craftsmenStats = {};
+            
+            clicks.forEach(click => {
+                const id = click.craftsman_id;
+                const name = click.craftsman_name;
+                const action = click.action;
+                
+                if (!craftsmenStats[id]) {
+                    craftsmenStats[id] = {
+                        id: id,
+                        name: name,
+                        whatsapp: 0,
+                        call: 0,
+                        request: 0,
+                        total: 0,
+                        invited: invites.includes(id.toString())
+                    };
+                }
+                
+                if (action === 'whatsapp_click') craftsmenStats[id].whatsapp++;
+                else if (action.includes('call')) craftsmenStats[id].call++;
+                else if (action === 'service_requested') craftsmenStats[id].request++;
+                
+                craftsmenStats[id].total = 
+                    craftsmenStats[id].whatsapp + 
+                    craftsmenStats[id].call + 
+                    craftsmenStats[id].request;
+            });
+            
+            renderTable();
+            updateStats();
+        }
+        
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            const stats = Object.values(craftsmenStats);
+            
+            stats.sort((a, b) => b.total - a.total);
+            
+            if (stats.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">لا توجد نقرات حالياً</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = stats.map(c => {
+                let rowClass = 'row-cold';
+                let statusDot = 'dot-cold';
+                let statusText = '⏳ انتظر';
+                let buttonDisabled = true;
+                
+                if (c.total >= 3) {
+                    rowClass = 'row-hot';
+                    statusDot = 'dot-hot';
+                    statusText = '🔥 جاهز';
+                    buttonDisabled = false;
+                } else if (c.total >= 2) {
+                    rowClass = 'row-warm';
+                    statusDot = 'dot-warm';
+                    statusText = '👀 راقب';
+                    buttonDisabled = true;
+                }
+                
+                if (c.invited) {
+                    statusText = '✅ تمت الدعوة';
+                    buttonDisabled = true;
+                }
+                
+                return `
+                    <tr class="${rowClass}">
+                        <td>
+                            <span class="status-dot ${statusDot}"></span>
+                            ${statusText}
+                        </td>
+                        <td>
+                            <strong>${c.name}</strong>
+                            <br>
+                            <small>ID: ${c.id}</small>
+                        </td>
+                        <td>
+                            <span class="badge badge-whatsapp">💬 ${c.whatsapp}</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-call">📞 ${c.call}</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-request">🛠️ ${c.request}</span>
+                        </td>
+                        <td>
+                            <strong>${c.total}</strong>
+                        </td>
+                        <td>
+                            ${c.invited ? 
+                                '<button class="btn btn-disabled" disabled>✅ تمت الدعوة</button>' :
+                                buttonDisabled ? 
+                                    '<button class="btn btn-disabled" disabled>⏳ انتظر</button>' :
+                                    `<button class="btn btn-invite" onclick="sendInvite('${c.id}', '${c.name}')">📲 إرسال دعوة</button>`
+                            }
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function updateStats() {
+            const stats = Object.values(craftsmenStats);
+            
+            const totalClicks = stats.reduce((sum, c) => sum + c.total, 0);
+            const readyToInvite = stats.filter(c => c.total >= 3 && !c.invited).length;
+            const serviceRequests = stats.reduce((sum, c) => sum + c.request, 0);
+            
+            document.getElementById('totalClicks').textContent = totalClicks;
+            document.getElementById('readyToInvite').textContent = readyToInvite;
+            document.getElementById('serviceRequests').textContent = serviceRequests;
+            document.getElementById('invitesSent').textContent = invitesSentCount;
+        }
+        
+        function sendInvite(craftsmanId, craftsmanName) {
+            const phone = prompt(`أدخل رقم هاتف ${craftsmanName}:`);
+            if (!phone) return;
+            
+            const message = `السلام عليكم ${craftsmanName}،\n\n` +
+                           `معاكم منصة "قريب - Qareeb" 🛠️\n\n` +
+                           `في أكثر من عميل مهتم بخدمتك من موقعنا 👀\n` +
+                           `المنصة مجانية حالياً 🎁\n\n` +
+                           `تحب نضيفك عشان توصلك طلبات مباشرة؟\n\n` +
+                           `للتفعيل:\n` +
+                           `🔗 الرابط: https://qareebb.netlify.app/set-password\n` +
+                           `📞 رقم الهاتف: ${phone}\n` +
+                           `🔑 كلمة المرور: ${phone}\n\n` +
+                           `تقدر تغير كلمة المرور بعد الدخول.\n` +
+                           `أي استفسار أنا في الخدمة 📞`;
+            
+            const whatsappUrl = `https://wa.me/216${phone}?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+            
+            const invites = JSON.parse(localStorage.getItem('invites_sent') || '[]');
+            invites.push(craftsmanId);
+            localStorage.setItem('invites_sent', JSON.stringify(invites));
+            
+            loadData();
+        }
+        
+        loadData();
+        setInterval(loadData, 30000);
+        
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'qareeb_clicks' || e.key === 'invites_sent') {
+                loadData();
+            }
+        });
+    </script>
+</body>
+</html>
