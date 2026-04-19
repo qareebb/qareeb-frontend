@@ -74,65 +74,68 @@
         </div>
     </div>
     <script>
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_HhAE45rXqPO6n84y4RVMyrvR7S-1TuUVJjGF7mIwZ299rc-iwrDAFjhxZwZ94zgeXw/exec';
-        let craftsmenStats = {};
-        let invitesSentCount = 0;
+        const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSh-frmn5UetYudunPHsVippZCj9Em3Cgu8DB7cLXJY153sdtTMA38fTGzQ3vL03GEe02AFiRbZhkrx/pub?output=csv';
+let craftsmenStats = {};
+let invitesSentCount = 0;
+
+async function loadData() {
+    try {
+        const response = await fetch(SHEET_CSV_URL);
+        const csvText = await response.text();
         
-        async function loadData() {
-            try {
-                // جلب البيانات من Google Sheet
-                const response = await fetch(GOOGLE_SCRIPT_URL);
-                const text = await response.text();
-                
-                let clicks = [];
-                try {
-                    clicks = JSON.parse(text);
-                } catch (e) {
-                    console.error('Invalid JSON, using localStorage');
-                    loadFromLocalStorage();
-                    return;
-                }
-                
-                // تخزين في localStorage للمزامنة
-                localStorage.setItem('qareeb_clicks', JSON.stringify(clicks));
-                
-                const invites = JSON.parse(localStorage.getItem('invites_sent') || '[]');
-                invitesSentCount = invites.length;
-                craftsmenStats = {};
-                
-                clicks.forEach(click => {
-                    const id = click.craftsman_id;
-                    const name = click.craftsman_name;
-                    const action = click.action;
-                    
-                    if (!id) return;
-                    
-                    if (!craftsmenStats[id]) {
-                        craftsmenStats[id] = { 
-                            id, 
-                            name, 
-                            whatsapp: 0, 
-                            call: 0, 
-                            request: 0, 
-                            total: 0, 
-                            invited: invites.includes(id.toString()) 
-                        };
-                    }
-                    
-                    if (action === 'whatsapp_click') craftsmenStats[id].whatsapp++;
-                    else if (action && action.includes('call')) craftsmenStats[id].call++;
-                    else if (action === 'service_requested') craftsmenStats[id].request++;
-                    
-                    craftsmenStats[id].total = craftsmenStats[id].whatsapp + craftsmenStats[id].call + craftsmenStats[id].request;
+        // تحويل CSV إلى كائنات
+        const rows = csvText.split('\n').slice(1); // تجاهل الصف الأول (العناوين)
+        const clicks = [];
+        
+        rows.forEach(row => {
+            if (!row.trim()) return;
+            const cols = row.split(','); // فاصل comma للـ CSV
+            if (cols.length >= 5) {
+                clicks.push({
+                    timestamp: cols[0],
+                    craftsman_id: cols[1],
+                    craftsman_name: cols[2],
+                    service_type: cols[3],
+                    action: cols[4]
                 });
-                
-                renderTable();
-                updateStats();
-            } catch (error) {
-                console.error('Error loading from Google Sheet:', error);
-                loadFromLocalStorage();
             }
-        }
+        });
+        
+        // تخزين محلي
+        localStorage.setItem('qareeb_clicks', JSON.stringify(clicks));
+        
+        const invites = JSON.parse(localStorage.getItem('invites_sent') || '[]');
+        invitesSentCount = invites.length;
+        craftsmenStats = {};
+        
+        clicks.forEach(click => {
+            const id = click.craftsman_id;
+            const name = click.craftsman_name;
+            const action = click.action;
+            
+            if (!id) return;
+            
+            if (!craftsmenStats[id]) {
+                craftsmenStats[id] = { 
+                    id, name, whatsapp: 0, call: 0, request: 0, total: 0, 
+                    invited: invites.includes(id.toString()) 
+                };
+            }
+            
+            if (action === 'whatsapp_click') craftsmenStats[id].whatsapp++;
+            else if (action && action.includes('call')) craftsmenStats[id].call++;
+            else if (action === 'service_requested') craftsmenStats[id].request++;
+            
+            craftsmenStats[id].total = craftsmenStats[id].whatsapp + craftsmenStats[id].call + craftsmenStats[id].request;
+        });
+        
+        renderTable();
+        updateStats();
+    } catch (error) {
+        console.error('Error:', error);
+        loadFromLocalStorage();
+    }
+}
         
         function loadFromLocalStorage() {
             const clicks = JSON.parse(localStorage.getItem('qareeb_clicks') || '[]');
