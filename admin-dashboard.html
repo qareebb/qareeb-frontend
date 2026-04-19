@@ -62,7 +62,10 @@
         <div class="card">
             <div class="auto-refresh">
                 <h2>👥 الحرفيين (حسب النشاط)</h2>
-                <button class="refresh-btn" onclick="loadData()">🔄 تحديث</button>
+                <div>
+                    <button class="refresh-btn" onclick="loadData()">🔄 تحديث</button>
+                    <button class="refresh-btn" onclick="clearAllData()" style="background: #ef4444; color: white; margin-right: 10px;">🗑️ مسح الكل</button>
+                </div>
             </div>
             <table class="craftsmen-table">
                 <thead><tr><th>الحالة</th><th>الحرفي</th><th>واتساب</th><th>اتصال</th><th>طلب خدمة</th><th>المجموع</th><th>إجراء</th></tr></thead>
@@ -71,10 +74,67 @@
         </div>
     </div>
     <script>
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyJebRcH7LjoshSwM13MkGhN5B6thVl0FZECUROIKSB385LpETqtgN9OKIBCgb6cFjq_A/exec';
         let craftsmenStats = {};
         let invitesSentCount = 0;
         
-        function loadData() {
+        async function loadData() {
+            try {
+                // جلب البيانات من Google Sheet
+                const response = await fetch(GOOGLE_SCRIPT_URL);
+                const text = await response.text();
+                
+                let clicks = [];
+                try {
+                    clicks = JSON.parse(text);
+                } catch (e) {
+                    console.error('Invalid JSON, using localStorage');
+                    loadFromLocalStorage();
+                    return;
+                }
+                
+                // تخزين في localStorage للمزامنة
+                localStorage.setItem('qareeb_clicks', JSON.stringify(clicks));
+                
+                const invites = JSON.parse(localStorage.getItem('invites_sent') || '[]');
+                invitesSentCount = invites.length;
+                craftsmenStats = {};
+                
+                clicks.forEach(click => {
+                    const id = click.craftsman_id;
+                    const name = click.craftsman_name;
+                    const action = click.action;
+                    
+                    if (!id) return;
+                    
+                    if (!craftsmenStats[id]) {
+                        craftsmenStats[id] = { 
+                            id, 
+                            name, 
+                            whatsapp: 0, 
+                            call: 0, 
+                            request: 0, 
+                            total: 0, 
+                            invited: invites.includes(id.toString()) 
+                        };
+                    }
+                    
+                    if (action === 'whatsapp_click') craftsmenStats[id].whatsapp++;
+                    else if (action && action.includes('call')) craftsmenStats[id].call++;
+                    else if (action === 'service_requested') craftsmenStats[id].request++;
+                    
+                    craftsmenStats[id].total = craftsmenStats[id].whatsapp + craftsmenStats[id].call + craftsmenStats[id].request;
+                });
+                
+                renderTable();
+                updateStats();
+            } catch (error) {
+                console.error('Error loading from Google Sheet:', error);
+                loadFromLocalStorage();
+            }
+        }
+        
+        function loadFromLocalStorage() {
             const clicks = JSON.parse(localStorage.getItem('qareeb_clicks') || '[]');
             const invites = JSON.parse(localStorage.getItem('invites_sent') || '[]');
             invitesSentCount = invites.length;
@@ -84,12 +144,25 @@
                 const id = click.craftsman_id;
                 const name = click.craftsman_name;
                 const action = click.action;
+                
+                if (!id) return;
+                
                 if (!craftsmenStats[id]) {
-                    craftsmenStats[id] = { id, name, whatsapp: 0, call: 0, request: 0, total: 0, invited: invites.includes(id.toString()) };
+                    craftsmenStats[id] = { 
+                        id, 
+                        name, 
+                        whatsapp: 0, 
+                        call: 0, 
+                        request: 0, 
+                        total: 0, 
+                        invited: invites.includes(id.toString()) 
+                    };
                 }
+                
                 if (action === 'whatsapp_click') craftsmenStats[id].whatsapp++;
-                else if (action.includes('call')) craftsmenStats[id].call++;
+                else if (action && action.includes('call')) craftsmenStats[id].call++;
                 else if (action === 'service_requested') craftsmenStats[id].request++;
+                
                 craftsmenStats[id].total = craftsmenStats[id].whatsapp + craftsmenStats[id].call + craftsmenStats[id].request;
             });
             
@@ -126,43 +199,54 @@
         }
         
         function sendInvite(id, name) {
-    const clicks = JSON.parse(localStorage.getItem('qareeb_clicks') || '[]');
-    const craftsman = clicks.find(c => c.craftsman_id == id);
-    let craftsmanPhone = craftsman?.craftsman_phone || '';
-    
-    if (!craftsmanPhone) {
-        craftsmanPhone = prompt(`أدخل رقم هاتف ${name} (8 أرقام بدون 216):`);
-        if (!craftsmanPhone) return;
-    }
-    
-    craftsmanPhone = craftsmanPhone.replace(/\D/g, '');
-    if (craftsmanPhone.startsWith('216')) {
-        craftsmanPhone = craftsmanPhone.substring(3);
-    }
-    
-    const msg = `السلام عليكم ${name}،\n\n` +
-               `معاكم منصة "قريب - Qareeb" 🛠️\n\n` +
-               `في أكثر من عميل مهتم بخدمتك من موقعنا 👀\n` +
-               `المنصة مجانية حالياً 🎁\n\n` +
-               `تحب نضيفك عشان توصلك طلبات مباشرة؟\n\n` +
-               `للتفعيل:\n` +
-               `🔗 الرابط: https://qareeb-s2f5.onrender.com/set-password\n` +
-               `📞 رقم الهاتف: ${craftsmanPhone}\n` +
-               `🔑 كلمة المرور: ${craftsmanPhone}\n\n` +
-               `تقدر تغير كلمة المرور بعد الدخول.\n` +
-               `أي استفسار أنا في الخدمة 📞`;
-    
-    // استخدام window.location.href للفتح المباشر
-    const whatsappUrl = `https://wa.me/216${craftsmanPhone}?text=${encodeURIComponent(msg)}`;
-    console.log('Opening WhatsApp:', whatsappUrl);
-    
-    // فتح الرابط في نفس النافذة (أكثر توافقاً)
-    window.location.href = whatsappUrl;
-    
-    const invites = JSON.parse(localStorage.getItem('invites_sent') || '[]');
-    invites.push(id.toString());
-    localStorage.setItem('invites_sent', JSON.stringify(invites));
-}
+            const clicks = JSON.parse(localStorage.getItem('qareeb_clicks') || '[]');
+            const craftsman = clicks.find(c => c.craftsman_id == id);
+            let craftsmanPhone = craftsman?.craftsman_phone || '';
+            
+            if (!craftsmanPhone) {
+                craftsmanPhone = prompt(`أدخل رقم هاتف ${name} (8 أرقام):`);
+                if (!craftsmanPhone) return;
+            }
+            
+            craftsmanPhone = craftsmanPhone.replace(/\D/g, '');
+            if (craftsmanPhone.startsWith('216')) {
+                craftsmanPhone = craftsmanPhone.substring(3);
+            }
+            
+            const msg = `السلام عليكم ${name}،\n\n` +
+                       `معاكم منصة "قريب - Qareeb" 🛠️\n\n` +
+                       `في أكثر من عميل مهتم بخدمتك 👀\n` +
+                       `المنصة مجانية 🎁\n\n` +
+                       `تحب نضيفك؟\n\n` +
+                       `للتفعيل:\n` +
+                       `🔗 https://qareeb-s2f5.onrender.com/set-password\n` +
+                       `📞 ${craftsmanPhone}\n` +
+                       `🔑 ${craftsmanPhone}`;
+            
+            // نسخ الرسالة وعرضها
+            navigator.clipboard?.writeText(msg).then(() => {
+                alert(`✅ تم نسخ الرسالة!\n\n📞 أرسل إلى: +216 ${craftsmanPhone}\n\nافتح واتساب والصق الرسالة`);
+            }).catch(() => {
+                prompt(`انسخ هذه الرسالة وأرسلها إلى +216 ${craftsmanPhone}:`, msg);
+            });
+            
+            // محاولة فتح واتساب
+            const whatsappUrl = `https://wa.me/216${craftsmanPhone}?text=${encodeURIComponent(msg)}`;
+            window.open(whatsappUrl, '_blank');
+            
+            const invites = JSON.parse(localStorage.getItem('invites_sent') || '[]');
+            invites.push(id.toString());
+            localStorage.setItem('invites_sent', JSON.stringify(invites));
+            loadData();
+        }
+        
+        function clearAllData() {
+            if (confirm('هل أنت متأكد من مسح جميع بيانات النقرات والدعوات؟')) {
+                localStorage.removeItem('qareeb_clicks');
+                localStorage.removeItem('invites_sent');
+                location.reload();
+            }
+        }
         
         loadData();
         setInterval(loadData, 30000);
