@@ -155,20 +155,35 @@
             </label>
         </div>
         
-        <!-- قائمة الخدمات - تظهر فقط عند اختيار حرفي -->
-        <div id="serviceSelector" style="display: none;">
-            <select id="regService" style="padding: 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; width: 100%; margin-bottom: 10px;">
-                <option value="">-- اختر الخدمة --</option>
-                <option value="1">🚰 سباك</option>
-                <option value="2">⚡ كهربائي</option>
-                <option value="3">🧹 تنظيف</option>
-                <option value="5">🎨 دهان</option>
-                <option value="6">🪚 نجارة</option>
-                <option value="7">🔧 تركيب</option>
-                <option value="8">🛠️ بريكولاج</option>
-                <option value="9">📹 أنظمة أمنية</option>
-            </select>
-        </div>
+        <!-- قائمة الخدمات والموقع - تظهر فقط عند اختيار حرفي -->
+<div id="serviceSelector" style="display: none;">
+    <select id="regService" style="padding: 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; width: 100%; margin-bottom: 10px;">
+        <option value="">-- اختر الخدمة --</option>
+        <option value="1">🚰 سباك</option>
+        <option value="2">⚡ كهربائي</option>
+        <option value="3">🧹 تنظيف</option>
+        <option value="5">🎨 دهان</option>
+        <option value="6">🪚 نجارة</option>
+        <option value="7">🔧 تركيب</option>
+        <option value="8">🛠️ بريكولاج</option>
+        <option value="9">📹 أنظمة أمنية</option>
+    </select>
+    
+    <!-- زر تحديد الموقع -->
+    <button type="button" id="getLocationBtn" onclick="getCraftsmanLocation()" style="padding: 14px; background: #3b82f6; color: white; border: none; border-radius: 10px; font-size: 16px; width: 100%; margin-bottom: 10px; cursor: pointer;">
+        📍 تحديد موقعي الحالي
+    </button>
+    
+    <!-- عرض الإحداثيات -->
+    <input type="hidden" id="regLat">
+    <input type="hidden" id="regLng">
+    
+    <!-- عرض الموقع النصي -->
+    <input type="text" id="regLocationDisplay" placeholder="موقعك الحالي" readonly style="padding: 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; width: 100%; margin-bottom: 10px; background: #f3f4f6;">
+    
+    <!-- رابط لفتح الخريطة للتعديل -->
+    <a href="#" id="mapLink" target="_blank" style="display: none; color: #3b82f6; text-decoration: none; margin-bottom: 10px;">🗺️ تعديل الموقع على الخريطة</a>
+</div>
         
         <button type="submit" class="btn btn-primary">تسجيل</button>
     </form>

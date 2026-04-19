@@ -344,7 +344,63 @@ async function handleLogin(e) {
         showLoading(false);
     }
 }
+// ==========================================
+// Get Craftsman Location (GPS)
+// ==========================================
 
+let craftsmanLat = null;
+let craftsmanLng = null;
+
+function getCraftsmanLocation() {
+    if (!navigator.geolocation) {
+        alert('متصفحك لا يدعم تحديد الموقع');
+        return;
+    }
+    
+    const btn = document.getElementById('getLocationBtn');
+    btn.textContent = '⏳ جاري تحديد الموقع...';
+    btn.disabled = true;
+    
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            craftsmanLat = position.coords.latitude;
+            craftsmanLng = position.coords.longitude;
+            
+            // حفظ الإحداثيات
+            document.getElementById('regLat').value = craftsmanLat;
+            document.getElementById('regLng').value = craftsmanLng;
+            
+            // عرض الموقع
+            document.getElementById('regLocationDisplay').value = `📍 ${craftsmanLat.toFixed(6)}, ${craftsmanLng.toFixed(6)}`;
+            
+            // رابط الخريطة للتعديل
+            const mapUrl = `https://www.google.com/maps?q=${craftsmanLat},${craftsmanLng}`;
+            const mapLink = document.getElementById('mapLink');
+            mapLink.href = mapUrl;
+            mapLink.style.display = 'block';
+            
+            btn.textContent = '✅ تم تحديد الموقع';
+            btn.style.background = '#10b981';
+        },
+        (error) => {
+            console.error('Location error:', error);
+            btn.textContent = '📍 تحديد موقعي الحالي';
+            btn.disabled = false;
+            
+            let errorMsg = 'حدث خطأ في تحديد الموقع. ';
+            if (error.code === 1) errorMsg += 'الرجاء السماح بالوصول للموقع.';
+            else if (error.code === 2) errorMsg += 'الموقع غير متاح.';
+            else if (error.code === 3) errorMsg += 'انتهت مهلة الانتظار.';
+            
+            alert(errorMsg);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
+}
 // ==========================================
 // Handle Register
 // ==========================================
@@ -357,14 +413,22 @@ async function handleRegister(e) {
     const password = document.getElementById('regPassword').value;
     const role = document.querySelector('input[name="role"]:checked').value;
     const serviceId = document.getElementById('regService')?.value;
+    const lat = document.getElementById('regLat')?.value;
+    const lng = document.getElementById('regLng')?.value;
     
-    // التحقق من اختيار الخدمة للحرفي
-    if (role === 'craftsman' && !serviceId) {
-        alert('الرجاء اختيار الخدمة');
-        return;
+    // التحقق للحرفي
+    if (role === 'craftsman') {
+        if (!serviceId) {
+            alert('الرجاء اختيار الخدمة');
+            return;
+        }
+        if (!lat || !lng) {
+            alert('الرجاء تحديد موقعك الحالي');
+            return;
+        }
     }
     
-    console.log('Registering:', { name, phone, role, serviceId });
+    console.log('Registering:', { name, phone, role, serviceId, lat, lng });
     
     showLoading(true);
     
