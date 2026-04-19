@@ -2,7 +2,7 @@
 // Google Sheet Tracking URL
 // ==========================================
 
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyJebRcH7LjoshSwM13MkGhN5B6thVl0FZECUROIKSB385LpETqtgN9OKIBCgb6cFjq_A/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_HhAE45rXqPO6n84y4RVMyrvR7S-1TuUVJjGF7mIwZ299rc-iwrDAFjhxZwZ94zgeXw/exec';
 
 // ==========================================
 // Local Storage for Admin Dashboard
