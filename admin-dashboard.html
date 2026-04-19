@@ -126,7 +126,6 @@
         }
         
         function sendInvite(id, name) {
-    // رقم الحرفي - نبحث عنه أو نطلبه
     const clicks = JSON.parse(localStorage.getItem('qareeb_clicks') || '[]');
     const craftsman = clicks.find(c => c.craftsman_id == id);
     let craftsmanPhone = craftsman?.craftsman_phone || '';
@@ -136,15 +135,11 @@
         if (!craftsmanPhone) return;
     }
     
-    // تنظيف الرقم
     craftsmanPhone = craftsmanPhone.replace(/\D/g, '');
-    
-    // إزالة 216 إذا كانت موجودة في البداية
     if (craftsmanPhone.startsWith('216')) {
         craftsmanPhone = craftsmanPhone.substring(3);
     }
     
-    // الرسالة الجاهزة
     const msg = `السلام عليكم ${name}،\n\n` +
                `معاكم منصة "قريب - Qareeb" 🛠️\n\n` +
                `في أكثر من عميل مهتم بخدمتك من موقعنا 👀\n` +
@@ -157,17 +152,16 @@
                `تقدر تغير كلمة المرور بعد الدخول.\n` +
                `أي استفسار أنا في الخدمة 📞`;
     
-    // رابط واتساب مباشر
-    const whatsappUrl = `https://api.whatsapp.com/send?phone=216${craftsmanPhone}&text=${encodeURIComponent(msg)}`;
+    // استخدام window.location.href للفتح المباشر
+    const whatsappUrl = `https://wa.me/216${craftsmanPhone}?text=${encodeURIComponent(msg)}`;
+    console.log('Opening WhatsApp:', whatsappUrl);
     
-    // فتح الرابط
-    window.open(whatsappUrl, '_blank');
+    // فتح الرابط في نفس النافذة (أكثر توافقاً)
+    window.location.href = whatsappUrl;
     
-    // تسجيل الدعوة
     const invites = JSON.parse(localStorage.getItem('invites_sent') || '[]');
     invites.push(id.toString());
     localStorage.setItem('invites_sent', JSON.stringify(invites));
-    loadData();
 }
         
         loadData();
