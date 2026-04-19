@@ -174,25 +174,41 @@ async function loadData() {
         }
         
         function renderTable() {
-            const tbody = document.getElementById('tableBody');
-            const stats = Object.values(craftsmenStats);
-            stats.sort((a, b) => b.total - a.total);
-            
-            if (stats.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">لا توجد نقرات حالياً</td></tr>';
-                return;
-            }
-            
-            tbody.innerHTML = stats.map(c => {
-                let rowClass = 'row-cold', statusDot = 'dot-cold', statusText = '⏳ انتظر', btnDisabled = true;
-                if (c.total >= 3) { rowClass = 'row-hot'; statusDot = 'dot-hot'; statusText = '🔥 جاهز'; btnDisabled = false; }
-                else if (c.total >= 2) { rowClass = 'row-warm'; statusDot = 'dot-warm'; statusText = '👀 راقب'; }
-                if (c.invited) { statusText = '✅ تمت الدعوة'; btnDisabled = true; }
-                
-                return `<tr class="${rowClass}"><td><span class="status-dot ${statusDot}"></span>${statusText}</td><td><strong>${c.name}</strong><br><small>ID: ${c.id}</small></td><td><span class="badge badge-whatsapp">💬 ${c.whatsapp}</span></td><td><span class="badge badge-call">📞 ${c.call}</span></td><td><span class="badge badge-request">🛠️ ${c.request}</span></td><td><strong>${c.total}</strong></td><td>${c.invited ? '<button class="btn btn-disabled" disabled>✅ تمت</button>' : (btnDisabled ? '<button class="btn btn-disabled" disabled>⏳ انتظر</button>' : `<button class="btn btn-invite" onclick="sendInvite('${c.id}', '${c.name}')">📲 دعوة</button>`)}</td></tr>`;
-            }).join('');
-        }
+    const tbody = document.getElementById('tableBody');
+    const stats = Object.values(craftsmenStats);
+    stats.sort((a, b) => b.total - a.total);
+    
+    if (stats.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center">لا توجد نقرات حالياً</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = stats.map(c => {
+        let rowClass = 'row-cold', statusDot = 'dot-cold', statusText = '⏳ انتظر', btnDisabled = true;
+        if (c.total >= 3) { rowClass = 'row-hot'; statusDot = 'dot-hot'; statusText = '🔥 جاهز'; btnDisabled = false; }
+        else if (c.total >= 2) { rowClass = 'row-warm'; statusDot = 'dot-warm'; statusText = '👀 راقب'; }
+        if (c.invited) { statusText = '✅ تمت الدعوة'; btnDisabled = true; }
         
+        // جلب رقم الهاتف من البيانات المخزنة
+        const clicks = JSON.parse(localStorage.getItem('qareeb_clicks') || '[]');
+        const craftsmanData = clicks.find(click => click.craftsman_id == c.id);
+        const phone = craftsmanData?.craftsman_phone || 'غير متوفر';
+        
+        return `<tr class="${rowClass}">
+            <td><span class="status-dot ${statusDot}"></span>${statusText}</td>
+            <td>
+                <strong>${c.name}</strong><br>
+                <small>📞 ${phone}</small><br>
+                <small>ID: ${c.id}</small>
+            </td>
+            <td><span class="badge badge-whatsapp">💬 ${c.whatsapp}</span></td>
+            <td><span class="badge badge-call">📞 ${c.call}</span></td>
+            <td><span class="badge badge-request">🛠️ ${c.request}</span></td>
+            <td><strong>${c.total}</strong></td>
+            <td>${c.invited ? '<button class="btn btn-disabled" disabled>✅ تمت</button>' : (btnDisabled ? '<button class="btn btn-disabled" disabled>⏳ انتظر</button>' : `<button class="btn btn-invite" onclick="sendInvite('${c.id}', '${c.name}')">📲 دعوة</button>`)}</td>
+        </tr>`;
+    }).join('');
+}
         function updateStats() {
             const stats = Object.values(craftsmenStats);
             document.getElementById('totalClicks').textContent = stats.reduce((s, c) => s + c.total, 0);
@@ -217,32 +233,36 @@ async function loadData() {
     }
     
     const msg = `السلام عليكم ${name}،\n\n` +
-               `معاكم منصة "قريب - Qareeb" 🛠️\n\n` +
-               `في أكثر من عميل مهتم بخدمتك 👀\n` +
-               `المنصة مجانية 🎁\n\n` +
-               `تحب نضيفك؟\n\n` +
+               `معاكم منصة قريب - Qareeb\n\n` +
+               `في أكثر من عميل مهتم بخدمتك\n` +
+               `المنصة مجانية حاليا\n\n` +
+               `تحب نضيفك عشان توصلك طلبات مباشرة؟\n\n` +
                `للتفعيل:\n` +
-               `🔗 https://qareeb-s2f5.onrender.com/set-password\n` +
-               `📞 ${craftsmanPhone}\n` +
-               `🔑 ${craftsmanPhone}`;
+               `الرابط: https://qareeb-s2f5.onrender.com/set-password\n` +
+               `رقم الهاتف: ${craftsmanPhone}\n` +
+               `كلمة المرور: ${craftsmanPhone}\n\n` +
+               `تقدر تغير كلمة المرور بعد الدخول.\n` +
+               `أي استفسار أنا في الخدمة`;
     
-    // 🔥 رابط مباشر مثل الصفحة الرئيسية
-    const whatsappUrl = `https://wa.me/216${craftsmanPhone}?text=${encodeURIComponent(msg)}`;
+    // رابط واتساب مباشر - سيفتح التطبيق على الهاتف تلقائياً
+    const whatsappUrl = `whatsapp://send?phone=216${craftsmanPhone}&text=${encodeURIComponent(msg)}`;
     
-    // فتح في نافذة جديدة (مثل الصفحة الرئيسية)
-    const newWindow = window.open(whatsappUrl, '_blank');
+    // رابط احتياطي للمتصفح
+    const webWhatsappUrl = `https://web.whatsapp.com/send?phone=216${craftsmanPhone}&text=${encodeURIComponent(msg)}`;
     
-    // إذا لم يفتح، استخدم رابط بديل
-    if (!newWindow || newWindow.closed) {
-        window.location.href = whatsappUrl;
-    }
+    // محاولة فتح التطبيق أولاً
+    window.location.href = whatsappUrl;
+    
+    // إذا لم يفتح التطبيق (على الكمبيوتر)، افتح WhatsApp Web بعد ثانية
+    setTimeout(() => {
+        window.open(webWhatsappUrl, '_blank');
+    }, 1000);
     
     const invites = JSON.parse(localStorage.getItem('invites_sent') || '[]');
     invites.push(id.toString());
     localStorage.setItem('invites_sent', JSON.stringify(invites));
     loadData();
-}
-        
+}       
         function clearAllData() {
             if (confirm('هل أنت متأكد من مسح جميع بيانات النقرات والدعوات؟')) {
                 localStorage.removeItem('qareeb_clicks');
