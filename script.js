@@ -1,30 +1,16 @@
 // ==========================================
-// Click Tracking System
+// Click Tracking System (Simple Console)
 // ==========================================
 
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxg1o9kCiByDilI8pDJyEEBVFKU3bM5Xt9kCob1OZNBkssXfieqWphQU2UqGVgrZzHhHg/exec';
-
-// تتبع النقرات
 async function trackClick(craftsmanId, craftsmanName, action) {
-    try {
-        const response = await fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                craftsman_id: craftsmanId,
-                craftsman_name: craftsmanName,
-                service_type: getServiceName(selectedService),
-                action: action
-            })
-        });
-        const data = await response.json();
-        console.log(`📊 Tracked: ${action} - ${craftsmanName}`, data);
-    } catch (error) {
-        console.warn('Tracking error:', error);
-    }
+    // تسجيل في console فقط
+    console.log(`📊 CLICK TRACKED | Time: ${new Date().toLocaleTimeString()} | ID: ${craftsmanId} | Name: ${craftsmanName} | Action: ${action} | Service: ${getServiceName(selectedService)}`);
+    
+    // يمكنك نسخ هذا السطر يدوياً إلى Google Sheet لاحقاً
+    const logEntry = `${new Date().toLocaleString()}\t${craftsmanId}\t${craftsmanName}\t${getServiceName(selectedService)}\t${action}`;
+    console.log(`📋 COPY TO SHEET: ${logEntry}`);
 }
 
-// الحصول على اسم الخدمة
 function getServiceName(serviceId) {
     const serviceNames = { 
         '1': 'سباك', '2': 'كهربائي', '3': 'تنظيف',
