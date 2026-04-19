@@ -126,13 +126,46 @@
         }
         
         function sendInvite(id, name) {
-            const phone = prompt(`أدخل رقم هاتف ${name}:`); if (!phone) return;
-            const msg = `السلام عليكم ${name}،\n\nمعاكم منصة "قريب - Qareeb" 🛠️\n\nفي أكثر من عميل مهتم بخدمتك 👀\nالمنصة مجانية 🎁\n\nتحب نضيفك؟\n\nللتفعيل:\n🔗 https://qareeb-s2f5.onrender.com/set-password\n📞 ${phone}\n🔑 ${phone}`;
-            window.open(`https://wa.me/216${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-            const invites = JSON.parse(localStorage.getItem('invites_sent') || '[]');
-            invites.push(id); localStorage.setItem('invites_sent', JSON.stringify(invites));
-            loadData();
-        }
+    // رقم Admin (رقمك أنت)
+    const ADMIN_PHONE = '24661499'; // ← ضع رقمك هنا
+    
+    // رقم الحرفي - نبحث عنه أو نطلبه
+    const clicks = JSON.parse(localStorage.getItem('qareeb_clicks') || '[]');
+    const craftsman = clicks.find(c => c.craftsman_id == id);
+    let craftsmanPhone = craftsman?.craftsman_phone || '';
+    
+    if (!craftsmanPhone) {
+        craftsmanPhone = prompt(`أدخل رقم هاتف ${name}:`);
+        if (!craftsmanPhone) return;
+    }
+    
+    craftsmanPhone = craftsmanPhone.replace(/\D/g, '');
+    
+    // الرسالة التي ستظهر في واتساب Admin
+    const msg = `السلام عليكم ${name}،\n\n` +
+               `معاكم منصة "قريب - Qareeb" 🛠️\n\n` +
+               `في أكثر من عميل مهتم بخدمتك من موقعنا 👀\n` +
+               `المنصة مجانية حالياً 🎁\n\n` +
+               `تحب نضيفك عشان توصلك طلبات مباشرة؟\n\n` +
+               `للتفعيل:\n` +
+               `🔗 الرابط: https://qareeb-s2f5.onrender.com/set-password\n` +
+               `📞 رقم الهاتف: ${craftsmanPhone}\n` +
+               `🔑 كلمة المرور: ${craftsmanPhone}\n\n` +
+               `تقدر تغير كلمة المرور بعد الدخول.\n` +
+               `أي استفسار أنا في الخدمة 📞`;
+    
+    // 🔥 فتح واتساب Admin مع رقم الحرفي كـ "إرسال إلى"
+    // هذا يفتح واتساب Admin جاهز لإرسال رسالة إلى الحرفي
+    const whatsappUrl = `https://wa.me/216${craftsmanPhone}?text=${encodeURIComponent(msg)}`;
+    
+    console.log('Opening WhatsApp to:', craftsmanPhone);
+    window.open(whatsappUrl, '_blank');
+    
+    const invites = JSON.parse(localStorage.getItem('invites_sent') || '[]');
+    invites.push(id.toString());
+    localStorage.setItem('invites_sent', JSON.stringify(invites));
+    loadData();
+}
         
         loadData();
         setInterval(loadData, 30000);

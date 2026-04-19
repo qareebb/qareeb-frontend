@@ -9,9 +9,13 @@ const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyJebRcH7Ljos
 // ==========================================
 
 function storeClickLocally(craftsmanId, craftsmanName, action) {
+    const craftsman = currentCraftsmen.find(c => c.id == craftsmanId);
+    const phone = craftsman ? craftsman.phone : '';
+    
     const clickData = {
         craftsman_id: craftsmanId,
         craftsman_name: craftsmanName,
+        craftsman_phone: phone,
         service_type: getServiceName(selectedService),
         action: action,
         timestamp: new Date().toISOString()
