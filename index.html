@@ -133,27 +133,42 @@
         </div>
 
         <!-- Register Screen -->
-        <div id="registerScreen" class="screen">
-            <button class="btn-back" onclick="showScreen('home')">← رجوع</button>
-            <h2 class="section-title">حساب جديد</h2>
-            
-            <form id="registerForm" class="auth-form">
-                <input type="text" id="regName" placeholder="الاسم الكامل" required>
-                <input type="tel" id="regPhone" placeholder="رقم الهاتف" required>
-                <input type="password" id="regPassword" placeholder="كلمة المرور" required>
-                
-                <div class="role-selector">
-                    <label>
-                        <input type="radio" name="role" value="user" checked> مستخدم
-                    </label>
-                    <label>
-                        <input type="radio" name="role" value="craftsman"> حرفي
-                    </label>
-                </div>
-                
-                <button type="submit" class="btn btn-primary">تسجيل</button>
-            </form>
+<div id="registerScreen" class="screen">
+    <button class="btn-back" onclick="showScreen('home')">← رجوع</button>
+    <h2 class="section-title">حساب جديد</h2>
+    
+    <form id="registerForm" class="auth-form">
+        <input type="text" id="regName" placeholder="الاسم الكامل" required>
+        <input type="tel" id="regPhone" placeholder="رقم الهاتف" required>
+        <input type="password" id="regPassword" placeholder="كلمة المرور" required>
+        
+        <div class="role-selector">
+            <label>
+                <input type="radio" name="role" value="user" checked> مستخدم
+            </label>
+            <label>
+                <input type="radio" name="role" value="craftsman"> حرفي
+            </label>
         </div>
+        
+        <!-- قائمة الخدمات - تظهر فقط عند اختيار حرفي -->
+        <div id="serviceSelector" style="display: none;">
+            <select id="regService" class="auth-form" style="padding: 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; width: 100%; margin-bottom: 10px;">
+                <option value="">-- اختر الخدمة --</option>
+                <option value="1">🚰 سباك</option>
+                <option value="2">⚡ كهربائي</option>
+                <option value="3">🧹 تنظيف</option>
+                <option value="5">🎨 دهان</option>
+                <option value="6">🪚 نجارة</option>
+                <option value="7">🔧 تركيب</option>
+                <option value="8">🛠️ بريكولاج</option>
+                <option value="9">📹 أنظمة أمنية</option>
+            </select>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">تسجيل</button>
+    </form>
+</div>
 
         <!-- Change Password Screen -->
         <div id="changePasswordScreen" class="screen">
