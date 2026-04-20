@@ -10,12 +10,12 @@ const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_HhAE45rXqP
 
 function storeClickLocally(craftsmanId, craftsmanName, action) {
     const craftsman = currentCraftsmen.find(c => c.id == craftsmanId);
-    const phone = craftsman ? craftsman.phone : '';
+    const phone = craftsman?.phone || null;
     
     const clickData = {
         craftsman_id: craftsmanId,
         craftsman_name: craftsmanName,
-        craftsman_phone: phone,  // ✅ تمت الإضافة
+        craftsman_phone: phone,
         service_type: getServiceName(selectedService),
         action: action,
         timestamp: new Date().toISOString()
@@ -24,8 +24,8 @@ function storeClickLocally(craftsmanId, craftsmanName, action) {
     let clicks = JSON.parse(localStorage.getItem('qareeb_clicks') || '[]');
     clicks.push(clickData);
     
-    if (clicks.length > 200) {
-        clicks = clicks.slice(-200);
+    if (clicks.length > 2000) {  // ✅ زيادة الحد
+        clicks = clicks.slice(-2000);
     }
     
     localStorage.setItem('qareeb_clicks', JSON.stringify(clicks));
