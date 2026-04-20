@@ -60,18 +60,30 @@
         </div>
         
         <div class="card">
-            <div class="auto-refresh">
-                <h2>👥 الحرفيين (حسب النشاط)</h2>
-                <div>
-                    <button class="refresh-btn" onclick="loadData()">🔄 تحديث</button>
-                    <button class="refresh-btn" onclick="clearAllData()" style="background: #ef4444; color: white; margin-right: 10px;">🗑️ مسح الكل</button>
-                </div>
-            </div>
-            <table class="craftsmen-table">
-                <thead><tr><th>الحالة</th><th>الحرفي</th><th>واتساب</th><th>اتصال</th><th>طلب خدمة</th><th>المجموع</th><th>إجراء</th></tr></thead>
-                <tbody id="tableBody"><tr><td colspan="7" style="text-align:center">جاري التحميل...</td></tr></tbody>
-            </table>
+    <div class="auto-refresh">
+        <h2>👥 الحرفيين (حسب النشاط)</h2>
+        <div>
+            <button class="refresh-btn" onclick="loadData()">🔄 تحديث</button>
+            <button class="refresh-btn" onclick="clearAllData()" style="background: #ef4444; color: white; margin-right: 10px;">🗑️ مسح الكل</button>
         </div>
+    </div>
+    <table class="craftsmen-table">
+        <thead>
+            <tr>
+                <th>الحالة</th>
+                <th>الحرفي</th>
+                <th>واتساب</th>
+                <th>اتصال</th>
+                <th>طلب خدمة</th>
+                <th>🔥 Heat</th>
+                <th>إجراء</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <tr><td colspan="7" style="text-align:center">جاري التحميل...</td></tr>
+        </tbody>
+    </table>
+</div>
     </div>
     <script>
         const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSh-frmn5UetYudunPHsVippZCj9Em3Cgu8DB7cLXJY153sdtTMA38fTGzQ3vL03GEe02AFiRbZhkrx/pub?output=csv';
@@ -176,7 +188,14 @@ async function loadData() {
         function renderTable() {
     const tbody = document.getElementById('tableBody');
     const stats = Object.values(craftsmenStats);
-    stats.sort((a, b) => b.total - a.total);
+    
+    // حساب Heat Score لكل حرفي
+    stats.forEach(c => {
+        c.heatScore = (c.whatsapp * 2) + (c.request * 3) + (c.call * 1);
+    });
+    
+    // ترتيب حسب Heat Score
+    stats.sort((a, b) => b.heatScore - a.heatScore);
     
     if (stats.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" style="text-align:center">لا توجد نقرات حالياً</td></tr>';
@@ -185,11 +204,12 @@ async function loadData() {
     
     tbody.innerHTML = stats.map(c => {
         let rowClass = 'row-cold', statusDot = 'dot-cold', statusText = '⏳ انتظر', btnDisabled = true;
-        if (c.total >= 3) { rowClass = 'row-hot'; statusDot = 'dot-hot'; statusText = '🔥 جاهز'; btnDisabled = false; }
-        else if (c.total >= 2) { rowClass = 'row-warm'; statusDot = 'dot-warm'; statusText = '👀 راقب'; }
+        
+        if (c.heatScore >= 9) { rowClass = 'row-hot'; statusDot = 'dot-hot'; statusText = '🔥 جاهز'; btnDisabled = false; }
+        else if (c.heatScore >= 5) { rowClass = 'row-warm'; statusDot = 'dot-warm'; statusText = '👀 راقب'; }
+        
         if (c.invited) { statusText = '✅ تمت الدعوة'; btnDisabled = true; }
         
-        // جلب رقم الهاتف من البيانات المخزنة
         const clicks = JSON.parse(localStorage.getItem('qareeb_clicks') || '[]');
         const craftsmanData = clicks.find(click => click.craftsman_id == c.id);
         const phone = craftsmanData?.craftsman_phone || 'غير متوفر';
@@ -204,7 +224,7 @@ async function loadData() {
             <td><span class="badge badge-whatsapp">💬 ${c.whatsapp}</span></td>
             <td><span class="badge badge-call">📞 ${c.call}</span></td>
             <td><span class="badge badge-request">🛠️ ${c.request}</span></td>
-            <td><strong>${c.total}</strong></td>
+            <td><strong>🔥 ${c.heatScore}</strong></td>
             <td>${c.invited ? '<button class="btn btn-disabled" disabled>✅ تمت</button>' : (btnDisabled ? '<button class="btn btn-disabled" disabled>⏳ انتظر</button>' : `<button class="btn btn-invite" onclick="sendInvite('${c.id}', '${c.name}')">📲 دعوة</button>`)}</td>
         </tr>`;
     }).join('');
@@ -244,19 +264,9 @@ async function loadData() {
                `تقدر تغير كلمة المرور بعد الدخول.\n` +
                `أي استفسار أنا في الخدمة`;
     
-    // رابط واتساب مباشر - سيفتح التطبيق على الهاتف تلقائياً
-    const whatsappUrl = `whatsapp://send?phone=216${craftsmanPhone}&text=${encodeURIComponent(msg)}`;
-    
-    // رابط احتياطي للمتصفح
-    const webWhatsappUrl = `https://web.whatsapp.com/send?phone=216${craftsmanPhone}&text=${encodeURIComponent(msg)}`;
-    
-    // محاولة فتح التطبيق أولاً
-    window.location.href = whatsappUrl;
-    
-    // إذا لم يفتح التطبيق (على الكمبيوتر)، افتح WhatsApp Web بعد ثانية
-    setTimeout(() => {
-        window.open(webWhatsappUrl, '_blank');
-    }, 1000);
+    // ✅ استخدام wa.me المضمون
+    const whatsappUrl = `https://wa.me/216${craftsmanPhone}?text=${encodeURIComponent(msg)}`;
+    window.open(whatsappUrl, '_blank');
     
     const invites = JSON.parse(localStorage.getItem('invites_sent') || '[]');
     invites.push(id.toString());
