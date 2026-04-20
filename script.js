@@ -15,7 +15,7 @@ function storeClickLocally(craftsmanId, craftsmanName, action) {
     const clickData = {
         craftsman_id: craftsmanId,
         craftsman_name: craftsmanName,
-        craftsman_phone: phone,
+        craftsman_phone: phone,  // ✅ تمت الإضافة
         service_type: getServiceName(selectedService),
         action: action,
         timestamp: new Date().toISOString()
@@ -24,13 +24,11 @@ function storeClickLocally(craftsmanId, craftsmanName, action) {
     let clicks = JSON.parse(localStorage.getItem('qareeb_clicks') || '[]');
     clicks.push(clickData);
     
-    // الاحتفاظ بآخر 200 نقرة فقط
     if (clicks.length > 200) {
         clicks = clicks.slice(-200);
     }
     
     localStorage.setItem('qareeb_clicks', JSON.stringify(clicks));
-    console.log(`💾 Saved to localStorage: ${craftsmanName} - ${action}`);
 }
 
 // ==========================================
